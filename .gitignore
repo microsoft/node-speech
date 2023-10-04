@@ -1,0 +1,8 @@
+node_modules
+.cache
+build
+.env
+.DS_Store
+*.js
+*.js.map
+*.d.ts
