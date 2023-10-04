@@ -1,12 +1,12 @@
 {
-  "name": "vscode-node-speech",
+  "name": "@vscode/node-speech",
   "version": "1.0.0",
   "description": "Native bindings for Micrsooft Speech SDK",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-node-speech"
+    "url": "https://github.com/Microsoft/node-speech"
   },
-  "homepage": "https://github.com/Microsoft/vscode-node-speech",
+  "homepage": "https://github.com/Microsoft/node-speech",
   "keywords": [
     "vscode"
   ],
