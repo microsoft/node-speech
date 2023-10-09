@@ -18,12 +18,9 @@
   "types": "index.d.ts",
   "scripts": {
     "preinstall": "node preinstall.js",
-    "postinstall": "tsc -p ./",
-    "build": "node-gyp build && tsc -p ./",
-    "compile": "tsc -p ./",
-    "prepare": "npm run build",
+    "prepare": "tsc",
     "install": "node-gyp rebuild",
-    "watch": "tsc -watch -p ./",
+    "watch": "tsc -w",
     "test": "jest"
   },
   "devDependencies": {
