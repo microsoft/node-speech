@@ -24,7 +24,60 @@
           'xcode_settings': {
             'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
           }
-        }]
+        }],
+        ["OS=='win'", {
+          "defines": [
+              "WINDOWS",
+              "_HAS_EXCEPTIONS=1"
+          ],
+          "msvs_configuration_attributes": {
+              "SpectreMitigation": "Spectre"
+          },
+          "msvs_settings": {
+              "VCCLCompilerTool": {
+                  "ExceptionHandling": 1,
+                  'AdditionalOptions': [
+                      '/guard:cf',
+                      '-std:c++17',
+                      '/we4244',
+                      '/we4267',
+                      '/ZH:SHA_256'
+                  ],
+              },
+              'VCLinkerTool': {
+                  'AdditionalOptions': [
+                      '/guard:cf'
+                  ]
+              }
+          },
+        }],
+        ['OS=="win" and target_arch=="arm64"', {
+          'link_settings': {
+            'libraries': [
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
+            ],
+          },
+        }],
+        ['OS=="win" and target_arch=="x64"', {
+          'link_settings': {
+            'libraries': [
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
+            ],
+          },
+        }],
+        ['OS=="win" and target_arch=="ia32"', {
+          'link_settings': {
+            'libraries': [
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
+            ],
+          },
+        }],
       ]
     },
     {
