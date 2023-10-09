@@ -78,6 +78,30 @@
             ],
           },
         }],
+        ['OS=="linux"', {
+          "libraries": [
+            "-Wl,-rpath,'$$ORIGIN'",
+            '-lMicrosoft.CognitiveServices.Speech.core',
+            '-lMicrosoft.CognitiveServices.Speech.extension.embedded.sr',
+            '-lMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime',
+            '-lMicrosoft.CognitiveServices.Speech.extension.onnxruntime',
+          ],
+        }],
+        ['OS=="linux" and target_arch=="x64"', {
+          "ldflags": [
+            "-L<(module_root_dir)/.cache/SpeechSDK/runtimes/linux-x64/native"
+          ]
+        }],
+        ['OS=="linux" and target_arch=="arm64"', {
+          "ldflags": [
+            "-L<(module_root_dir)/.cache/SpeechSDK/runtimes/linux-arm64/native"
+          ]
+        }],
+        ['OS=="linux" and target_arch=="armhf"', {
+          "ldflags": [
+            "-L<(module_root_dir)/.cache/SpeechSDK/runtimes/linux-arm/native"
+          ]
+        }],
       ]
     },
     {
