@@ -27,11 +27,11 @@ extends:
       - name: node-speech
 
         buildSteps:
-          - script: npm install
+          - script: npm ci
             displayName: Install and build
 
         testSteps:
-          - script: npm install
+          - script: npm ci
             displayName: Install and build
 
           - script: npm run test
