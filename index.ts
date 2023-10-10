@@ -5,6 +5,7 @@
 
 import * as dotenv from 'dotenv';
 import { join } from 'path';
+export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 
 dotenv.config();
 
@@ -38,8 +39,6 @@ interface SpeechLib {
   transcribe: (path: string, key: string, model: string, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   untranscribe: (id: number) => void
 }
-
-const speechapi = require(join(__dirname, 'build', 'Release', 'speechapi.node')) as SpeechLib;
 
 export function transcribe(callback: ITranscriptionCallback, options: ITranscriptionOptions): void {
   const path = join(__dirname, 'dependencies', 'sr-models');
