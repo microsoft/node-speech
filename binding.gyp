@@ -10,6 +10,9 @@
       ],
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
+      'cflags': ['-std=c++17' ],
+      'cflags_cc': ['-std=c++17' ],
+      'defines': [ 'NAPI_CPP_EXCEPTIONS' ],
       'conditions': [
         ['OS=="mac"', {
           'link_settings': {

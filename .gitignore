@@ -4,6 +4,5 @@ build
 .env
 .DS_Store
 *.js
-!preinstall.js
 *.js.map
 *.d.ts

@@ -24,7 +24,7 @@ describe('Basics', () => {
 		});
 	}
 
-	test('it should be able to start and stop', async () => {
+	(process.env['AZURE_SPEECH_KEY'] ? test : test.skip)('it should be able to start and stop', async () => {
 		await transcribeOnce();
 		await transcribeOnce();
 	}, 60000);

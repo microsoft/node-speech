@@ -27,11 +27,22 @@ extends:
       - name: node-speech
 
         buildSteps:
-          - script: npm install
+          - script: npm ci
             displayName: Install and build
 
+        testPlatforms:
+          - name: Linux
+            nodeVersions:
+              - 18.x
+          - name: MacOS
+            nodeVersions:
+              - 18.x
+          - name: Windows
+            nodeVersions:
+              - 18.x
+        
         testSteps:
-          - script: npm install
+          - script: npm ci
             displayName: Install and build
 
           - script: npm run test
