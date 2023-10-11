@@ -8,8 +8,10 @@
         '.cache/SpeechSDK/build/native/include/c_api',
         '.cache/SpeechSDK/build/native/include/cxx_api',
       ],
-      'cflags': [ '-fno-exceptions', '-std=c++17' ],
-      'cflags_cc': [ '-fno-exceptions', '-std=c++17' ],
+      'cflags!': [ '-fno-exceptions' ],
+      'cflags_cc!': [ '-fno-exceptions' ],
+      'cflags': ['-std=c++17' ],
+      'cflags_cc': ['-std=c++17' ],
       'defines': [ 'NAPI_CPP_EXCEPTIONS' ],
       'conditions': [
         ['OS=="mac"', {
