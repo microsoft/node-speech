@@ -9,7 +9,7 @@
         '.cache/SpeechSDK/build/native/include/cxx_api',
       ],
       'cflags!': [ '-fno-exceptions' ],
-      'cflags_cc!': [ '-fno-exceptions', '-std=c++17' ],
+      'cflags_cc!': [ '-fno-exceptions', '-std=c++20' ],
       'conditions': [
         ['OS=="mac"', {
           'link_settings': {
@@ -38,7 +38,7 @@
                   "ExceptionHandling": 1,
                   'AdditionalOptions': [
                       '/guard:cf',
-                      '-std:c++17',
+                      '-std:c++20',
                       '/we4244',
                       '/we4267',
                       '/ZH:SHA_256'
