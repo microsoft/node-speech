@@ -8,8 +8,8 @@
         '.cache/SpeechSDK/build/native/include/c_api',
         '.cache/SpeechSDK/build/native/include/cxx_api',
       ],
-      'cflags!': [ '-fno-exceptions', '-std=c++20' ],
-      'cflags_cc!': [ '-fno-exceptions', '-std=c++20' ],
+      'cflags': [ '-fno-exceptions', '-std=c++20' ],
+      'cflags_cc': [ '-fno-exceptions', '-std=c++20' ],
       'conditions': [
         ['OS=="mac"', {
           'link_settings': {
