@@ -8,8 +8,8 @@
         '.cache/SpeechSDK/build/native/include/c_api',
         '.cache/SpeechSDK/build/native/include/cxx_api',
       ],
-      'cflags': [ '-fno-exceptions', '-std=c++20' ],
-      'cflags_cc': [ '-fno-exceptions', '-std=c++20' ],
+      'cflags': [ '-fno-exceptions', '-std=c++17' ],
+      'cflags_cc': [ '-fno-exceptions', '-std=c++17' ],
       'conditions': [
         ['OS=="mac"', {
           'link_settings': {
@@ -22,13 +22,7 @@
             ],
           },
           'xcode_settings': {
-            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
-            'OTHER_CFLAGS': [
-              "-std=c++20"
-            ],
-            'OTHER_CPLUSPLUSFLAGS': [
-              '-std=c++20'
-            ]
+            'GCC_ENABLE_CPP_EXCEPTIONS': 'YES'
           }
         }],
         ["OS=='win'", {
@@ -44,7 +38,7 @@
                   "ExceptionHandling": 1,
                   'AdditionalOptions': [
                       '/guard:cf',
-                      '-std:c++20',
+                      '-std:c++17',
                       '/we4244',
                       '/we4267',
                       '/ZH:SHA_256'
