@@ -23,8 +23,11 @@
           },
           'xcode_settings': {
             'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+            'OTHER_CFLAGS': [
+              "-std=c++20"
+            ],
             'OTHER_CPLUSPLUSFLAGS': [
-              '-std=c++20',
+              '-std=c++20'
             ]
           }
         }],
