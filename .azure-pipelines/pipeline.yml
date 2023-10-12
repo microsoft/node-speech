@@ -1,10 +1,12 @@
 name: $(Date:yyyyMMdd)$(Rev:.r)
 
 trigger:
+  batch: true
   branches:
     include:
-      - release/vscode
-pr: none
+      - main
+
+pr: [main]
 
 resources:
   repositories:
