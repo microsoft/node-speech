@@ -17,8 +17,10 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "prepare": "tsc",
-    "install": "tsc && node preinstall.js && node-gyp rebuild",
+    "install": "node preinstall.js",
+    "postinstall": "node-gyp rebuild",
+    "prepublish": "tsc",
+    "prepare": "npm run test",
     "watch": "tsc -w",
     "test": "jest"
   },
