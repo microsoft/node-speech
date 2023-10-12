@@ -8,8 +8,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const got = require('got');
-const decompress = require('decompress');
+const stream = require('stream');
+const { finished } = require('stream/promises');
+const yauzl = require('yauzl');
 
 const packages = {
   'Microsoft.CognitiveServices.Speech': '1.32.1',
@@ -18,6 +19,43 @@ const packages = {
   'Microsoft.CognitiveServices.Speech.Extension.ONNX.Runtime': '1.32.1',
   // 'Microsoft.CognitiveServices.Speech.Extension.Telemetry': '1.32.1',
 };
+
+async function decompress(packagePath, outputPath) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(packagePath, { lazyEntries: true }, (err, zipfile) => {
+      if (err) {
+        return reject(err);
+      }
+
+      zipfile.on('entry', async entry => {
+        if (!/\/$/.test(entry.fileName)) {
+          await new Promise((resolve, reject) => {
+            zipfile.openReadStream(entry, async (err, istream) => {
+              if (err) {
+                return reject(err);
+              }
+
+              try {
+                const filePath = path.join(outputPath, entry.fileName);
+                await fs.promises.mkdir(path.dirname(filePath), { recursive: true, force: true });
+                const ostream = fs.createWriteStream(filePath);
+                await finished(istream.pipe(ostream));
+                resolve(undefined);
+              } catch (err) {
+                reject(err);
+              }
+            });
+          });
+        }
+
+        zipfile.readEntry();
+      });
+
+      zipfile.on('end', resolve);
+      zipfile.readEntry();
+    });
+  });
+}
 
 async function main(packages) {
   const cacheDir = path.join(__dirname, '.cache');
@@ -35,16 +73,16 @@ async function main(packages) {
 
     const sdkPath = path.join(cacheDir, 'SpeechSDK');
 
-    const downloadStream = got.stream(url);
-    const fileWriterStream = fs.createWriteStream(packagePath);
+    const res = await fetch(url);
 
-    downloadStream.pipe(fileWriterStream);
+    if (!res.ok) {
+      throw new Error(`Failed to download ${name} ${version}: ${res.statusText}`);
+    }
 
     console.log(`Downloading ${name} ${version}...`);
-    await new Promise((resolve, reject) => {
-      fileWriterStream.on('finish', resolve);
-      fileWriterStream.on('error', reject);
-    });
+    const istream = stream.Readable.fromWeb(res.body);
+    const ostream = fs.createWriteStream(packagePath);
+    await finished(istream.pipe(ostream));
 
     await decompress(packagePath, sdkPath);
   }
