@@ -28,9 +28,12 @@
     "**/*.js": {
       "when": "$(basename).ts"
     },
-        "**/*.d.ts": {
+    "**/*.d.ts": {
       "when": "$(basename).ts"
     },
-        "**/*.js.map": true
-    }
+    "**/*.js.map": true
+  },
+  "git.branchProtection": [
+    "main"
+  ]
 }
