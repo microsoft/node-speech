@@ -4,14 +4,21 @@
  *--------------------------------------------------------------------------------------------*/
 
 import transcribe, { speechapi, TranscriptionStatusCode } from '../index';
+import { dirname, join } from 'path';
 
 describe('Basics', () => {
 
 	function transcribeOnce() {
+		const path = join(dirname(__dirname), 'dependencies', 'sr-models');
+		const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
+		const key = process.env['AZURE_SPEECH_KEY'];
+		if (!key) {
+			throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable in the .env file');
+		}
 		const controller = new AbortController();
 
 		return new Promise<void>(resolve => {
-			transcribe((error, result) => {
+			transcribe({ path, model, key, signal: controller.signal }, (error, result) => {
 				switch (result.status) {
 					case TranscriptionStatusCode.STARTED:
 						setTimeout(() => controller.abort(), 1);
@@ -20,7 +27,7 @@ describe('Basics', () => {
 						resolve();
 						break;
 				}
-			}, { signal: controller.signal });
+			});
 		});
 	}
 
