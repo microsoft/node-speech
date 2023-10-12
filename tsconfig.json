@@ -16,7 +16,6 @@
   },
   "include": [
     "index.ts",
-    "preinstall.ts",
     "test"
   ],
   "exclude": [

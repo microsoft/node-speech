@@ -32,6 +32,9 @@ export interface ITranscriptionCallback {
 }
 
 export interface ITranscriptionOptions {
+  readonly path: string;
+  readonly key: string;
+  readonly model: string;
   readonly signal: AbortSignal;
 }
 
@@ -40,34 +43,36 @@ interface SpeechLib {
   untranscribe: (id: number) => void
 }
 
-export function transcribe(callback: ITranscriptionCallback, options: ITranscriptionOptions): void {
-  const path = join(__dirname, 'dependencies', 'sr-models');
-  const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
-  const key = process.env['AZURE_SPEECH_KEY'];
-
-  if (!key) {
-    throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable in the .env file');
-  }
-
+export function transcribe({ key, model, path, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
   const id = speechapi.transcribe(path, key, model, callback);
 
   const onAbort = () => {
     speechapi.untranscribe(id);
-    options.signal.removeEventListener('abort', onAbort);
+    signal.removeEventListener('abort', onAbort);
   };
 
-  options.signal.addEventListener('abort', onAbort);
+  signal.addEventListener('abort', onAbort);
 }
 
 if (require.main === module) {
-  transcribe((error, result) => {
+  const path = join(__dirname, 'dependencies', 'sr-models');
+  const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
+  const key = process.env['AZURE_SPEECH_KEY'];
+  if (!key) {
+    throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable in the .env file');
+  }
+
+  transcribe({
+    path,
+    key,
+    model,
+    signal: new AbortController().signal
+  }, (error, result) => {
     if (result.status === TranscriptionStatusCode.RECOGNIZING) {
       process.stdout.write(`\r${result.data}`);
     } else if (result.status === TranscriptionStatusCode.RECOGNIZED) {
       console.log(`\r${result.data}`);
     }
-  }, {
-    signal: new AbortController().signal
   });
 }
 
