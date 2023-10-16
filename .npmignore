@@ -10,3 +10,4 @@ test
 !*.d.ts
 *.js.map
 tsconfig.json
+assets

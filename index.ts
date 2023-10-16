@@ -52,7 +52,7 @@ export function transcribe({ key, model, path, signal }: ITranscriptionOptions, 
 }
 
 if (require.main === module) {
-  const path = join(__dirname, 'dependencies', 'sr-models');
+  const path = join(__dirname, 'assets', 'stt');
   const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
   const key = process.env['AZURE_SPEECH_KEY'];
   if (!key) {

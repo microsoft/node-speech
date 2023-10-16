@@ -9,7 +9,7 @@ import { dirname, join } from 'path';
 describe('Basics', () => {
 
 	function transcribeOnce() {
-		const path = join(dirname(__dirname), 'dependencies', 'sr-models');
+		const path = join(__dirname, 'assets', 'stt');
 		const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
 		const key = process.env['AZURE_SPEECH_KEY'];
 		if (!key) {
