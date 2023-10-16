@@ -137,6 +137,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.core.dll",
+                ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
@@ -148,6 +149,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.core.dll",
+                ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
@@ -159,6 +161,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.core.dll",
+                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
@@ -170,6 +173,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.core.so",
+                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.so",
@@ -181,6 +185,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.core.so",
+                ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.so",
@@ -192,6 +197,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.core.so",
+                ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.so",

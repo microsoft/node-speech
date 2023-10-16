@@ -3,11 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as dotenv from 'dotenv';
 import { join } from 'path';
 export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
-
-dotenv.config();
 
 export enum TranscriptionStatusCode {
   STARTED = 1,
@@ -59,7 +56,7 @@ if (require.main === module) {
   const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
   const key = process.env['AZURE_SPEECH_KEY'];
   if (!key) {
-    throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable in the .env file');
+    throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable');
   }
 
   transcribe({
@@ -68,10 +65,21 @@ if (require.main === module) {
     model,
     signal: new AbortController().signal
   }, (error, result) => {
-    if (result.status === TranscriptionStatusCode.RECOGNIZING) {
-      process.stdout.write(`\r${result.data}`);
-    } else if (result.status === TranscriptionStatusCode.RECOGNIZED) {
-      console.log(`\r${result.data}`);
+    if (error) {
+      console.error(error);
+    } else {
+      switch (result.status) {
+        case TranscriptionStatusCode.RECOGNIZING:
+          process.stdout.write(`\r${result.data}`);
+          break;
+        case TranscriptionStatusCode.RECOGNIZED:
+          console.log(`\r${result.data}`);
+          break;
+        default:
+          if (result.data) {
+            console.error(result.status, result.data);
+          }
+      }
     }
   });
 }
