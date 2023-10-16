@@ -82,6 +82,7 @@ public:
       auto phraseList = PhraseListGrammar::FromRecognizer(recognizer);
       phraseList->AddPhrase("VS Code");
       phraseList->AddPhrase("Visual Studio Code");
+      phraseList->AddPhrase("GitHub");
 
       // Callback: intermediate transcription results
       recognizer->Recognizing += [progress](const SpeechRecognitionEventArgs &e)
@@ -150,7 +151,7 @@ public:
         {
         case CancellationReason::Error:
         {
-          auto result = WorkerCallbackResult{StatusCode::END_SILENCE_TIMEOUT, e.ErrorDetails};
+          auto result = WorkerCallbackResult{StatusCode::ERROR, e.ErrorDetails};
           progress.Send(&result, 1);
           break;
         }
