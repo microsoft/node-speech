@@ -278,7 +278,7 @@ bool encrypt(const std::string &plainText, const std::string &key,
   std::vector<unsigned char> cipher_buf(plainText.size());
 
   if (1 != EVP_EncryptUpdate(ctx, cipher_buf.data(), &len,
-                             reinterpret_cast<const unsigned char *>(plainText.data()), plainText.size()))
+                             reinterpret_cast<const unsigned char *>(plainText.data()), static_cast<int>(plainText.size())))
   {
     EVP_CIPHER_CTX_free(ctx);
     return false;
@@ -341,7 +341,7 @@ bool decrypt(const std::string &cipherText, const std::string &key, const std::s
   std::vector<unsigned char> plain_buf(cipherText.size());
 
   if (!EVP_DecryptUpdate(ctx, plain_buf.data(), &len,
-                         reinterpret_cast<const unsigned char *>(cipherText.data()), cipherText.size()))
+                         reinterpret_cast<const unsigned char *>(cipherText.data()), static_cast<int>(cipherText.size())))
   {
     EVP_CIPHER_CTX_free(ctx);
     return false;
@@ -362,18 +362,19 @@ bool decrypt(const std::string &cipherText, const std::string &key, const std::s
   return true;
 }
 
-std::string derive_key(const std::string& input) {
-    const EVP_MD* md = EVP_sha256();
-    unsigned char hash[EVP_MD_size(md)];
-    unsigned int len;
+std::string derive_key(const std::string &input)
+{
+  const EVP_MD *md = EVP_sha256();
+  unsigned char hash[256 / 8]; // SHA-256 produces a 256-bit or 32-byte hash
+  unsigned int len;
 
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(ctx, md, nullptr);
-    EVP_DigestUpdate(ctx, input.data(), input.size());
-    EVP_DigestFinal_ex(ctx, hash, &len);
-    EVP_MD_CTX_free(ctx);
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(ctx, md, nullptr);
+  EVP_DigestUpdate(ctx, input.data(), input.size());
+  EVP_DigestFinal_ex(ctx, hash, &len);
+  EVP_MD_CTX_free(ctx);
 
-    return std::string(reinterpret_cast<char*>(hash), len);
+  return std::string(reinterpret_cast<char *>(hash), len);
 }
 
 Napi::Value Transcribe(const Napi::CallbackInfo &info)
