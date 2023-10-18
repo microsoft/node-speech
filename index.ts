@@ -30,18 +30,17 @@ export interface ITranscriptionCallback {
 
 export interface ITranscriptionOptions {
   readonly path: string;
-  readonly key: string;
   readonly model: string;
   readonly signal: AbortSignal;
 }
 
 interface SpeechLib {
-  transcribe: (path: string, key: string, model: string, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  transcribe: (path: string, model: string, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   untranscribe: (id: number) => void
 }
 
-export function transcribe({ key, model, path, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
-  const id = speechapi.transcribe(path, key, model, callback);
+export function transcribe({ model, path, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
+  const id = speechapi.transcribe(path, model, callback);
 
   const onAbort = () => {
     speechapi.untranscribe(id);
@@ -54,14 +53,9 @@ export function transcribe({ key, model, path, signal }: ITranscriptionOptions, 
 if (require.main === module) {
   const path = join(__dirname, 'assets', 'stt');
   const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
-  const key = process.env['AZURE_SPEECH_KEY'];
-  if (!key) {
-    throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable');
-  }
 
   transcribe({
     path,
-    key,
     model,
     signal: new AbortController().signal
   }, (error, result) => {

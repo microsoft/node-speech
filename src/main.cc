@@ -5,14 +5,12 @@
 
 #include <napi.h>
 #include <speechapi_cxx.h>
+#include "crypto.h"
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
-
-#include <openssl/evp.h>
-#include <openssl/rand.h>
 
 using namespace Microsoft::CognitiveServices::Speech;
 using namespace Microsoft::CognitiveServices::Speech::Audio;
@@ -66,8 +64,8 @@ class Worker : public Napi::AsyncProgressQueueWorker<WorkerCallbackResult>
 public:
   const int id;
 
-  Worker(std::string &path, std::string &key, std::string &model, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), key(key), model(model)
+  Worker(std::string &path, std::string &model, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), model(model)
   {
     std::lock_guard<std::mutex> lock(runningWorkersMutex);
     runningWorkers[this->id] = std::promise<void>();
@@ -77,6 +75,13 @@ public:
   {
     try
     {
+      std::string key;
+      if (!getKey(key))
+      {
+        auto result = WorkerCallbackResult{StatusCode::ERROR, "Key decryption failed!"};
+        progress.Send(&result, 1);
+      }
+
       auto speechConfig = EmbeddedSpeechConfig::FromPath(path);
       speechConfig->SetSpeechRecognitionModel(model, key);
       auto audioConfig = AudioConfig::FromDefaultMicrophoneInput();
@@ -203,7 +208,7 @@ public:
     }
     catch (const std::exception &e)
     {
-      auto result = WorkerCallbackResult{StatusCode::END_SILENCE_TIMEOUT, e.what()};
+      auto result = WorkerCallbackResult{StatusCode::ERROR, e.what()};
       progress.Send(&result, 1);
     }
   }
@@ -241,208 +246,30 @@ public:
 
 private:
   std::string path;
-  std::string key;
   std::string model;
 };
-
-const int GCM_TAG_LEN = 16;
-const int GCM_IV_LEN = 12;
-
-bool encrypt(const std::string &plainText, const std::string &key,
-             std::string &cipherText, std::string &iv, std::string &tag)
-{
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  if (!ctx)
-  {
-    return false;
-  }
-
-  if (1 != EVP_EncryptInit(ctx, EVP_aes_256_gcm(),
-                           reinterpret_cast<const unsigned char *>(key.data()), nullptr))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  std::vector<unsigned char> iv_buf(GCM_IV_LEN);
-  RAND_bytes(iv_buf.data(), GCM_IV_LEN);
-  iv = std::string(reinterpret_cast<char *>(iv_buf.data()), GCM_IV_LEN);
-
-  if (1 != EVP_EncryptInit_ex(ctx, nullptr, nullptr, nullptr, iv_buf.data()))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  int len;
-  std::vector<unsigned char> cipher_buf(plainText.size());
-
-  if (1 != EVP_EncryptUpdate(ctx, cipher_buf.data(), &len,
-                             reinterpret_cast<const unsigned char *>(plainText.data()), static_cast<int>(plainText.size())))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  int cipher_len = len;
-
-  if (1 != EVP_EncryptFinal_ex(ctx, cipher_buf.data() + len, &len))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  cipher_len += len;
-  cipherText = std::string(reinterpret_cast<char *>(cipher_buf.data()), cipher_len);
-
-  std::vector<unsigned char> tag_buf(GCM_TAG_LEN);
-  if (1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, GCM_TAG_LEN, tag_buf.data()))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-  tag = std::string(reinterpret_cast<char *>(tag_buf.data()), GCM_TAG_LEN);
-
-  EVP_CIPHER_CTX_free(ctx);
-  return true;
-}
-
-bool decrypt(const std::string &cipherText, const std::string &key, const std::string &iv,
-             const std::string &tag, std::string &plainText)
-{
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  if (!ctx)
-  {
-    return false;
-  }
-
-  if (!EVP_DecryptInit(ctx, EVP_aes_256_gcm(),
-                       reinterpret_cast<const unsigned char *>(key.data()), nullptr))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  if (!EVP_DecryptInit_ex(ctx, nullptr, nullptr, nullptr,
-                          reinterpret_cast<const unsigned char *>(iv.data())))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, GCM_TAG_LEN,
-                           reinterpret_cast<void *>(const_cast<char *>(tag.data()))))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  int len;
-  std::vector<unsigned char> plain_buf(cipherText.size());
-
-  if (!EVP_DecryptUpdate(ctx, plain_buf.data(), &len,
-                         reinterpret_cast<const unsigned char *>(cipherText.data()), static_cast<int>(cipherText.size())))
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  int plain_len = len;
-
-  if (EVP_DecryptFinal_ex(ctx, plain_buf.data() + len, &len) <= 0)
-  {
-    EVP_CIPHER_CTX_free(ctx);
-    return false;
-  }
-
-  plain_len += len;
-  plainText = std::string(reinterpret_cast<char *>(plain_buf.data()), plain_len);
-
-  EVP_CIPHER_CTX_free(ctx);
-  return true;
-}
-
-std::string derive_key(const std::string &input)
-{
-  const EVP_MD *md = EVP_sha256();
-  unsigned char hash[256 / 8]; // SHA-256 produces a 256-bit or 32-byte hash
-  unsigned int len;
-
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  EVP_DigestInit_ex(ctx, md, nullptr);
-  EVP_DigestUpdate(ctx, input.data(), input.size());
-  EVP_DigestFinal_ex(ctx, hash, &len);
-  EVP_MD_CTX_free(ctx);
-
-  return std::string(reinterpret_cast<char *>(hash), len);
-}
 
 Napi::Value Transcribe(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
-  std::string plainText = "api-speech-key";
-  std::string rawKey = "You may only use the C/C++ Extension for Visual Studio Code and C# Extension for Visual Studio Code with Visual Studio Code, Visual Studio or Xamarin Studio software to help you develop and test your applications. The software is licensed, not sold. This agreement only gives you some rights to use the software. Microsoft reserves all other rights. You may not work around any technical limitations in the software; reverse engineer, decompile or disassemble the software remove, minimize, block or modify any notices of Microsoft or its suppliers in the software share, publish, rent, or lease the software, or provide the software as a stand-alone hosted as solution for others to use.";
-  std::string derivedKey = derive_key(rawKey);
-  std::string cipherText, iv, tag;
-
-  if (encrypt(plainText, derivedKey, cipherText, iv, tag))
-  {
-    std::cout << "Encryption successful!" << std::endl;
-
-    std::cout << "cipherText: ";
-    for (unsigned char c : cipherText)
-    {
-      printf("%02x", c);
-    }
-    std::cout << std::endl;
-
-    std::cout << "iv: ";
-    for (unsigned char c : iv)
-    {
-      printf("%02x", c);
-    }
-    std::cout << std::endl;
-
-    std::cout << "tag: ";
-    for (unsigned char c : tag)
-    {
-      printf("%02x", c);
-    }
-  }
-  else
-  {
-    std::cerr << "Encryption failed!" << std::endl;
-  }
-
-  std::string decryptedText;
-  if (decrypt(cipherText, derivedKey, iv, tag, decryptedText))
-  {
-    std::cout << "Decryption successful: " << decryptedText << std::endl;
-  }
-  else
-  {
-    std::cerr << "Decryption failed!" << std::endl;
-  }
-
   // Validate args
-  if (info.Length() < 4)
+  if (info.Length() < 3)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || !info[3].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
 
   auto path = info[0].As<Napi::String>().Utf8Value();
-  auto key = info[1].As<Napi::String>().Utf8Value();
-  auto model = info[2].As<Napi::String>().Utf8Value();
-  auto callback = info[3].As<Napi::Function>();
+  auto model = info[1].As<Napi::String>().Utf8Value();
+  auto callback = info[2].As<Napi::Function>();
 
-  Worker *worker = new Worker(path, key, model, callback);
+  Worker *worker = new Worker(path, model, callback);
   worker->Queue();
 
   return Napi::Number::New(env, worker->id);
