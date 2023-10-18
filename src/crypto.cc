@@ -8,6 +8,7 @@
 #include <openssl/rand.h>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 const int GCM_TAG_LEN = 16;
 const int GCM_IV_LEN = 12;
