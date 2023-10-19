@@ -342,7 +342,7 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
   Napi::Env env = info.Env();
 
   // Validate args
-  if (info.Length() != 7)
+  if (info.Length() != 8)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
@@ -363,7 +363,7 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
 
   try
   {
-    std::string key = getKey(modelKey, cipher.Data(), static_cast<int>(cipher.Length()), iv.Data(), authTag.Data());
+    std::string key = info[7].As<Napi::String>().Utf8Value(); // TODO@bpasero workaround for crash when running in Electron: getKey(modelKey, cipher.Data(), static_cast<int>(cipher.Length()), iv.Data(), authTag.Data());
 
     Worker *worker = new Worker(modelPath, key, modelName, callback);
     worker->Queue();
