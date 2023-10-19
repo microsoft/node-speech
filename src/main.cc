@@ -5,12 +5,14 @@
 
 #include <napi.h>
 #include <speechapi_cxx.h>
-#include "crypto.h"
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_map>
+
+#include <openssl/evp.h>
+#include <openssl/rand.h>
 
 using namespace Microsoft::CognitiveServices::Speech;
 using namespace Microsoft::CognitiveServices::Speech::Audio;
@@ -242,6 +244,93 @@ private:
   std::string key;
   std::string model;
 };
+
+std::string getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag)
+{
+  std::string license =
+      "You may only use the C/C++ Extension for Visual Studio Code and C# "
+      "Extension for Visual Studio Code with Visual Studio Code, Visual Studio "
+      "or Xamarin Studio software to help you develop and test your applications. "
+      "The software is licensed, not sold. This agreement only gives you some "
+      "rights to use the software. Microsoft reserves all other rights. You may "
+      "not work around any technical limitations in the software; reverse engineer, "
+      "decompile or disassemble the software remove, minimize, block or modify any "
+      "notices of Microsoft or its suppliers in the software share, publish, rent, "
+      "or lease the software, or provide the software as a stand-alone hosted as "
+      "solution for others to use.";
+
+  const EVP_MD *md = EVP_sha256();
+  unsigned char key[32]; // SHA-256 produces a 256-bit or 32-byte hash
+  unsigned int keyLen;
+
+  EVP_MD_CTX *mdCtx = EVP_MD_CTX_new();
+  if (!mdCtx)
+  {
+    throw std::runtime_error("EVP_MD_CTX_new failed");
+  }
+
+  if (!EVP_DigestInit_ex(mdCtx, md, nullptr))
+  {
+    EVP_MD_CTX_free(mdCtx);
+    throw std::runtime_error("EVP_DigestInit_ex failed");
+  }
+
+  if (!EVP_DigestUpdate(mdCtx, license.data(), license.size()))
+  {
+    EVP_MD_CTX_free(mdCtx);
+    throw std::runtime_error("EVP_DigestUpdate failed");
+  }
+
+  if (!EVP_DigestFinal_ex(mdCtx, key, &keyLen))
+  {
+    EVP_MD_CTX_free(mdCtx);
+    throw std::runtime_error("EVP_DigestFinal_ex failed");
+  }
+
+  EVP_MD_CTX_free(mdCtx);
+
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  if (!ctx)
+  {
+    throw std::runtime_error("EVP_CIPHER_CTX_new failed");
+  }
+
+  if (!EVP_DecryptInit(ctx, EVP_aes_256_gcm(), key, nullptr))
+  {
+    EVP_CIPHER_CTX_free(ctx);
+    throw std::runtime_error("EVP_DecryptInit failed");
+  }
+
+  if (!EVP_DecryptInit_ex(ctx, nullptr, nullptr, nullptr, iv))
+  {
+    EVP_CIPHER_CTX_free(ctx);
+    throw std::runtime_error("EVP_DecryptInit_ex failed");
+  }
+
+  if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, reinterpret_cast<void *>(const_cast<unsigned char *>(authTag))))
+  {
+    EVP_CIPHER_CTX_free(ctx);
+    throw std::runtime_error("EVP_CIPHER_CTX_ctrl failed");
+  }
+
+  int len;
+  unsigned char result[512];
+  if (!EVP_DecryptUpdate(ctx, result, &len, cipher, cipherSize))
+  {
+    EVP_CIPHER_CTX_free(ctx);
+    throw std::runtime_error("EVP_DecryptUpdate failed");
+  }
+
+  int resultLen = len;
+  if (EVP_DecryptFinal_ex(ctx, result + len, &len) <= 0)
+  {
+    EVP_CIPHER_CTX_free(ctx);
+    throw std::runtime_error("EVP_DecryptFinal_ex failed");
+  }
+
+  EVP_CIPHER_CTX_free(ctx);
+  return std::string(reinterpret_cast<char *>(result), resultLen + len);
+}
 
 Napi::Value Transcribe(const Napi::CallbackInfo &info)
 {
