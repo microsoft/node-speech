@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { join } from 'path';
 export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 
 export enum TranscriptionStatusCode {
@@ -29,19 +28,23 @@ export interface ITranscriptionCallback {
 }
 
 export interface ITranscriptionOptions {
-  readonly path: string;
-  readonly key: string;
-  readonly model: string;
+  readonly modelPath: string;
+  readonly modelName: string;
+
+  readonly authTag: Buffer;
+  readonly iv: Buffer;
+  readonly cipher: Buffer;
+
   readonly signal: AbortSignal;
 }
 
 interface SpeechLib {
-  transcribe: (path: string, key: string, model: string, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  transcribe: (modelPath: string, modelName: string, authTagHex: Buffer, ivHex: Buffer, cipherHex: Buffer, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   untranscribe: (id: number) => void
 }
 
-export function transcribe({ key, model, path, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
-  const id = speechapi.transcribe(path, key, model, callback);
+export function transcribe({ modelPath, modelName, authTag, iv, cipher, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
+  const id = speechapi.transcribe(modelPath, modelName, authTag, iv, cipher, callback);
 
   const onAbort = () => {
     speechapi.untranscribe(id);
@@ -49,39 +52,6 @@ export function transcribe({ key, model, path, signal }: ITranscriptionOptions, 
   };
 
   signal.addEventListener('abort', onAbort);
-}
-
-if (require.main === module) {
-  const path = join(__dirname, 'assets', 'stt');
-  const model = 'Microsoft Speech Recognizer en-US FP Model V8.1';
-  const key = process.env['AZURE_SPEECH_KEY'];
-  if (!key) {
-    throw new Error('Missing Azure Speech API key, please set AZURE_SPEECH_KEY environment variable');
-  }
-
-  transcribe({
-    path,
-    key,
-    model,
-    signal: new AbortController().signal
-  }, (error, result) => {
-    if (error) {
-      console.error(error);
-    } else {
-      switch (result.status) {
-        case TranscriptionStatusCode.RECOGNIZING:
-          process.stdout.write(`\r${result.data}`);
-          break;
-        case TranscriptionStatusCode.RECOGNIZED:
-          console.log(`\r${result.data}`);
-          break;
-        default:
-          if (result.data) {
-            console.error(result.status, result.data);
-          }
-      }
-    }
-  });
 }
 
 export default transcribe;
