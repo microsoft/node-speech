@@ -12,30 +12,30 @@
 
 const int GCM_TAG_LEN = 16;
 
-bool decrypt(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *key, const unsigned char *iv, const unsigned char *authTag, std::string &plainText)
+std::string decrypt(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *key, const unsigned char *iv, const unsigned char *authTag)
 {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
     if (!ctx)
     {
-        return false;
+        throw std::runtime_error("EVP_CIPHER_CTX_new failed");
     }
 
     if (!EVP_DecryptInit(ctx, EVP_aes_256_gcm(), key, nullptr))
     {
         EVP_CIPHER_CTX_free(ctx);
-        return false;
+        throw std::runtime_error("EVP_DecryptInit failed");
     }
 
     if (!EVP_DecryptInit_ex(ctx, nullptr, nullptr, nullptr, iv))
     {
         EVP_CIPHER_CTX_free(ctx);
-        return false;
+        throw std::runtime_error("EVP_DecryptInit_ex failed");
     }
 
     if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, GCM_TAG_LEN, reinterpret_cast<void *>(const_cast<unsigned char *>(authTag))))
     {
         EVP_CIPHER_CTX_free(ctx);
-        return false;
+        throw std::runtime_error("EVP_CIPHER_CTX_ctrl failed");
     }
 
     int len;
@@ -44,7 +44,7 @@ bool decrypt(const unsigned char *cipher, const unsigned int cipherSize, const u
     if (!EVP_DecryptUpdate(ctx, plain_buf.data(), &len, cipher, cipherSize))
     {
         EVP_CIPHER_CTX_free(ctx);
-        return false;
+        throw std::runtime_error("EVP_DecryptUpdate failed");
     }
 
     int plain_len = len;
@@ -52,17 +52,17 @@ bool decrypt(const unsigned char *cipher, const unsigned int cipherSize, const u
     if (EVP_DecryptFinal_ex(ctx, plain_buf.data() + len, &len) <= 0)
     {
         EVP_CIPHER_CTX_free(ctx);
-        return false;
+        throw std::runtime_error("EVP_DecryptFinal_ex failed");
     }
 
     plain_len += len;
-    plainText = std::string(reinterpret_cast<char *>(plain_buf.data()), plain_len);
+    std::string plainText = std::string(reinterpret_cast<char *>(plain_buf.data()), plain_len);
 
     EVP_CIPHER_CTX_free(ctx);
-    return true;
+    return plainText;
 }
 
-bool getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag, std::string &key)
+std::string getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag)
 {
     std::string license =
         "You may only use the C/C++ Extension for Visual Studio Code and C# "
@@ -86,10 +86,5 @@ bool getKey(const unsigned char *cipher, const unsigned int cipherSize, const un
     EVP_DigestFinal_ex(ctx, hash, &len);
     EVP_MD_CTX_free(ctx);
 
-    if (decrypt(cipher, cipherSize, hash, iv, authTag, key))
-    {
-        return true;
-    }
-
-    return false;
+    return decrypt(cipher, cipherSize, hash, iv, authTag);
 }

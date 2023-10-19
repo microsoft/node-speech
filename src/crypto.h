@@ -8,6 +8,6 @@
 
 #include <string>
 
-bool getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag, std::string &key);
+std::string getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag);
 
 #endif // CRYPTO_H

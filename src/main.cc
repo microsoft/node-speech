@@ -266,19 +266,20 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
   auto cipher = info[4].As<Napi::Buffer<const unsigned char>>();
   auto callback = info[5].As<Napi::Function>();
 
-  
-
-  std::string key;
-  if (!getKey(cipher.Data(), cipher.ByteLength(), iv.Data(), authTag.Data(), key))
+  try
   {
-    Napi::TypeError::New(env, "Key decryption failed").ThrowAsJavaScriptException();
+    std::string key = getKey(cipher.Data(), cipher.ByteLength(), iv.Data(), authTag.Data());
+
+    Worker *worker = new Worker(modelPath, key, modelName, callback);
+    worker->Queue();
+
+    return Napi::Number::New(env, worker->id);
+  }
+  catch (const std::exception &e)
+  {
+    Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
     return env.Undefined();
   }
-
-  Worker *worker = new Worker(modelPath, key, modelName, callback);
-  worker->Queue();
-
-  return Napi::Number::New(env, worker->id);
 }
 
 Napi::Value Untranscribe(const Napi::CallbackInfo &info)
