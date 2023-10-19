@@ -357,7 +357,7 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
 
   try
   {
-    std::string key = getKey(cipher.Data(), cipher.ByteLength(), iv.Data(), authTag.Data());
+    std::string key = getKey(cipher.Data(), static_cast<int>(cipher.Length()), iv.Data(), authTag.Data());
 
     Worker *worker = new Worker(modelPath, key, modelName, callback);
     worker->Queue();
