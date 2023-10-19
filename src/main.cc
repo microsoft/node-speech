@@ -245,9 +245,9 @@ private:
   std::string model;
 };
 
-std::string getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag)
+std::string getKey(const std::string &modelKey, const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag)
 {
-  std::string license =
+  std::string expectedModelKey =
       "You may only use the C/C++ Extension for Visual Studio Code and C# "
       "Extension for Visual Studio Code with Visual Studio Code, Visual Studio "
       "or Xamarin Studio software to help you develop and test your applications. "
@@ -258,6 +258,11 @@ std::string getKey(const unsigned char *cipher, const unsigned int cipherSize, c
       "notices of Microsoft or its suppliers in the software share, publish, rent, "
       "or lease the software, or provide the software as a stand-alone hosted as "
       "solution for others to use.";
+
+  if (modelKey != expectedModelKey)
+  {
+    throw std::runtime_error("Invalid license key");
+  }
 
   const EVP_MD *md = EVP_sha256();
   unsigned char key[32]; // SHA-256 produces a 256-bit or 32-byte hash
@@ -275,7 +280,7 @@ std::string getKey(const unsigned char *cipher, const unsigned int cipherSize, c
     throw std::runtime_error("EVP_DigestInit_ex failed");
   }
 
-  if (!EVP_DigestUpdate(mdCtx, license.data(), license.size()))
+  if (!EVP_DigestUpdate(mdCtx, modelKey.data(), modelKey.size()))
   {
     EVP_MD_CTX_free(mdCtx);
     throw std::runtime_error("EVP_DigestUpdate failed");
@@ -337,12 +342,12 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
   Napi::Env env = info.Env();
 
   // Validate args
-  if (info.Length() != 6)
+  if (info.Length() != 7)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsBuffer() || !info[3].IsBuffer() || !info[4].IsBuffer() || !info[5].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || !info[3].IsBuffer() || !info[4].IsBuffer() || !info[5].IsBuffer() || !info[6].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
@@ -350,14 +355,15 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
 
   auto modelPath = info[0].As<Napi::String>().Utf8Value();
   auto modelName = info[1].As<Napi::String>().Utf8Value();
-  auto authTag = info[2].As<Napi::Buffer<const unsigned char>>();
-  auto iv = info[3].As<Napi::Buffer<const unsigned char>>();
-  auto cipher = info[4].As<Napi::Buffer<const unsigned char>>();
-  auto callback = info[5].As<Napi::Function>();
+  auto modelKey = info[2].As<Napi::String>().Utf8Value();
+  auto authTag = info[3].As<Napi::Buffer<const unsigned char>>();
+  auto iv = info[4].As<Napi::Buffer<const unsigned char>>();
+  auto cipher = info[5].As<Napi::Buffer<const unsigned char>>();
+  auto callback = info[6].As<Napi::Function>();
 
   try
   {
-    std::string key = getKey(cipher.Data(), static_cast<int>(cipher.Length()), iv.Data(), authTag.Data());
+    std::string key = getKey(modelKey, cipher.Data(), static_cast<int>(cipher.Length()), iv.Data(), authTag.Data());
 
     Worker *worker = new Worker(modelPath, key, modelName, callback);
     worker->Queue();

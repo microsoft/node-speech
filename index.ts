@@ -30,6 +30,7 @@ export interface ITranscriptionCallback {
 export interface ITranscriptionOptions {
   readonly modelPath: string;
   readonly modelName: string;
+  readonly modelKey: string;
 
   readonly authTag: Buffer;
   readonly iv: Buffer;
@@ -39,12 +40,12 @@ export interface ITranscriptionOptions {
 }
 
 interface SpeechLib {
-  transcribe: (modelPath: string, modelName: string, authTagHex: Buffer, ivHex: Buffer, cipherHex: Buffer, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  transcribe: (modelPath: string, modelName: string, modelKey: string, authTagHex: Buffer, ivHex: Buffer, cipherHex: Buffer, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   untranscribe: (id: number) => void
 }
 
-export function transcribe({ modelPath, modelName, authTag, iv, cipher, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
-  const id = speechapi.transcribe(modelPath, modelName, authTag, iv, cipher, callback);
+export function transcribe({ modelPath, modelName, modelKey, authTag, iv, cipher, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
+  const id = speechapi.transcribe(modelPath, modelName, modelKey, authTag, iv, cipher, callback);
 
   const onAbort = () => {
     speechapi.untranscribe(id);
