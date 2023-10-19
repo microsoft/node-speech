@@ -64,8 +64,8 @@ class Worker : public Napi::AsyncProgressQueueWorker<WorkerCallbackResult>
 public:
   const int id;
 
-  Worker(std::string &path, std::string &model, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), model(model)
+  Worker(std::string &path, std::string &key, std::string &model, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), key(key), model(model)
   {
     std::lock_guard<std::mutex> lock(runningWorkersMutex);
     runningWorkers[this->id] = std::promise<void>();
@@ -75,13 +75,6 @@ public:
   {
     try
     {
-      std::string key;
-      if (!getKey(key))
-      {
-        auto result = WorkerCallbackResult{StatusCode::ERROR, "Key decryption failed!"};
-        progress.Send(&result, 1);
-      }
-
       auto speechConfig = EmbeddedSpeechConfig::FromPath(path);
       speechConfig->SetSpeechRecognitionModel(model, key);
       auto audioConfig = AudioConfig::FromDefaultMicrophoneInput();
@@ -246,6 +239,7 @@ public:
 
 private:
   std::string path;
+  std::string key;
   std::string model;
 };
 
@@ -254,22 +248,32 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
   Napi::Env env = info.Env();
 
   // Validate args
-  if (info.Length() < 3)
+  if (info.Length() != 6)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || !info[3].IsString() || !info[4].IsString() || !info[5].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
 
-  auto path = info[0].As<Napi::String>().Utf8Value();
-  auto model = info[1].As<Napi::String>().Utf8Value();
-  auto callback = info[2].As<Napi::Function>();
+  auto modelPath = info[0].As<Napi::String>().Utf8Value();
+  auto modelName = info[1].As<Napi::String>().Utf8Value();
+  auto authTag = info[2].As<Napi::String>().Utf8Value();
+  auto iv = info[3].As<Napi::String>().Utf8Value();
+  auto cipher = info[4].As<Napi::String>().Utf8Value();
+  auto callback = info[5].As<Napi::Function>();
 
-  Worker *worker = new Worker(path, model, callback);
+  std::string key;
+  if (!getKey(cipher, iv, authTag, key))
+  {
+    Napi::TypeError::New(env, "Key decryption failed").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  Worker *worker = new Worker(modelPath, key, modelName, callback);
   worker->Queue();
 
   return Napi::Number::New(env, worker->id);
