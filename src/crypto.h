@@ -8,12 +8,6 @@
 
 #include <string>
 
-bool decrypt(const std::string &cipherText, const std::string &key, const std::string &iv,
-             const std::string &tag, std::string &plainText);
-
-std::string fromHexString(const std::string &input);
-std::string toHexString(const std::string &input);
-
-bool getKey(const std::string &cipher, const std::string &iv, const std::string &authTag, std::string &key);
+bool getKey(const unsigned char *cipher, const unsigned int cipherSize, const unsigned char *iv, const unsigned char *authTag, std::string &key);
 
 #endif // CRYPTO_H

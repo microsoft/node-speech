@@ -253,7 +253,7 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || !info[3].IsString() || !info[4].IsString() || !info[5].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsBuffer() || !info[3].IsBuffer() || !info[4].IsBuffer() || !info[5].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
@@ -261,13 +261,15 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
 
   auto modelPath = info[0].As<Napi::String>().Utf8Value();
   auto modelName = info[1].As<Napi::String>().Utf8Value();
-  auto authTag = info[2].As<Napi::String>().Utf8Value();
-  auto iv = info[3].As<Napi::String>().Utf8Value();
-  auto cipher = info[4].As<Napi::String>().Utf8Value();
+  auto authTag = info[2].As<Napi::Buffer<const unsigned char>>();
+  auto iv = info[3].As<Napi::Buffer<const unsigned char>>();
+  auto cipher = info[4].As<Napi::Buffer<const unsigned char>>();
   auto callback = info[5].As<Napi::Function>();
 
+  
+
   std::string key;
-  if (!getKey(cipher, iv, authTag, key))
+  if (!getKey(cipher.Data(), cipher.ByteLength(), iv.Data(), authTag.Data(), key))
   {
     Napi::TypeError::New(env, "Key decryption failed").ThrowAsJavaScriptException();
     return env.Undefined();
