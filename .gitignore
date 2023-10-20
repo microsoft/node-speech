@@ -8,3 +8,4 @@ build
 *.js.map
 *.d.ts
 assets
+dist
