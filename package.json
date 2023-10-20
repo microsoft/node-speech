@@ -17,9 +17,12 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "main": "index.js",
+  "main": "dist/main.js",
   "types": "index.d.ts",
   "scripts": {
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./index.js --bundle --outfile=dist/main.js --external:bindings --external:crypto --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --minify --sourcemap",
     "install": "node preinstall.js",
     "postinstall": "node-gyp rebuild",
     "prepublish": "tsc",
@@ -31,6 +34,7 @@
     "@types/decompress": "^4.2.5",
     "@types/jest": "^29.5.5",
     "@types/node": "18.x",
+    "esbuild": "^0.19.5",
     "jest": "^29.7.0",
     "typescript": "^5.2.x"
   },

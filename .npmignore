@@ -9,5 +9,6 @@ test
 *.ts
 !*.d.ts
 *.js.map
+index.js
 tsconfig.json
 assets
