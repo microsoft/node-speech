@@ -47,6 +47,9 @@ extends:
           - script: npm ci
             displayName: Install and build
 
+          - script: npm run esbuild-base -- --minify
+            displayName: Minify
+
           - script: npm run test
             displayName: Test npm package
 

@@ -23,7 +23,6 @@
     "install": "node preinstall.js",
     "postinstall": "node-gyp rebuild",
     "prepublish": "tsc",
-    "prepublishOnly": "npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./index.js --bundle --outfile=dist/main.js --external:bindings --external:crypto --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --minify --sourcemap",
     "prepare": "npm run test",
