@@ -46,7 +46,22 @@ interface SpeechLib {
   untranscribe: (id: number) => void
 }
 
+const expectedModelKey = 'You may only use the C/C++ Extension for Visual Studio Code and C# ' +
+  'Extension for Visual Studio Code with Visual Studio Code, Visual Studio ' +
+  'or Xamarin Studio software to help you develop and test your applications. ' +
+  'The software is licensed, not sold. This agreement only gives you some ' +
+  'rights to use the software. Microsoft reserves all other rights. You may ' +
+  'not work around any technical limitations in the software; reverse engineer, ' +
+  'decompile or disassemble the software remove, minimize, block or modify any ' +
+  'notices of Microsoft or its suppliers in the software share, publish, rent, ' +
+  'or lease the software, or provide the software as a stand-alone hosted as ' +
+  'solution for others to use.';
+
 function getKey(modelKey: string, authTag: Buffer, iv: Buffer, cipher: Buffer): string {
+  if (modelKey !== expectedModelKey) {
+    throw new Error('Invalid model key');
+  }
+
   const sha256hash = createHash('sha256');
   sha256hash.update(modelKey);
   const key = sha256hash.digest();
