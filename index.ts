@@ -42,7 +42,7 @@ export interface ITranscriptionOptions {
 }
 
 interface SpeechLib {
-  transcribe: (modelPath: string, modelName: string, modelKey: string, authTagHex: Buffer, ivHex: Buffer, cipherHex: Buffer, callback: (error: Error | undefined, result: ITranscriptionResult) => void, fallbackModelKey: string) => number,
+  transcribe: (modelPath: string, modelName: string, modelKey: string, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   untranscribe: (id: number) => void
 }
 
@@ -58,7 +58,7 @@ function getKey(modelKey: string, authTag: Buffer, iv: Buffer, cipher: Buffer): 
 }
 
 export function transcribe({ modelPath, modelName, modelKey, authTag, iv, cipher, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
-  const id = speechapi.transcribe(modelPath, modelName, modelKey, authTag, iv, cipher, callback, getKey(modelKey, authTag, iv, cipher));
+  const id = speechapi.transcribe(modelPath, modelName, getKey(modelKey, authTag, iv, cipher), callback);
 
   const onAbort = () => {
     speechapi.untranscribe(id);
