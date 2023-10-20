@@ -20,12 +20,12 @@
   "main": "dist/main.js",
   "types": "index.d.ts",
   "scripts": {
-    "publish": "npm run esbuild-base -- --minify",
     "esbuild-base": "esbuild ./index.js --bundle --outfile=dist/main.js --external:bindings --external:crypto --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --minify --sourcemap",
     "install": "node preinstall.js",
     "postinstall": "node-gyp rebuild",
     "prepublish": "tsc",
+    "prepublishOnly": "npm run esbuild-base -- --minify",
     "prepare": "npm run test",
     "watch": "tsc -w",
     "test": "jest"
