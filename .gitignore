@@ -7,5 +7,3 @@ build
 !preinstall.js
 *.js.map
 *.d.ts
-assets
-dist
