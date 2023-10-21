@@ -6,8 +6,6 @@
 #include <napi.h>
 #include <speechapi_cxx.h>
 
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 
