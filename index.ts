@@ -32,16 +32,22 @@ export interface ITranscriptionOptions {
   readonly modelName: string;
   readonly modelKey: string;
 
+  /**
+   * Path to the wav file to transcribe. If not specified, the audio 
+   * will be streamed from the microphone.
+   */
+  readonly wavPath: string | undefined;
+
   readonly signal: AbortSignal;
 }
 
 interface SpeechLib {
-  transcribe: (modelPath: string, modelName: string, modelKey: string, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  transcribe: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   untranscribe: (id: number) => void
 }
 
-export function transcribe({ modelPath, modelName, modelKey, signal }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
-  const id = speechapi.transcribe(modelPath, modelName, modelKey, callback);
+export function transcribe({ modelPath, modelName, modelKey, signal, wavPath }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
+  const id = speechapi.transcribe(modelPath, modelName, modelKey, wavPath, callback);
 
   const onAbort = () => {
     speechapi.untranscribe(id);

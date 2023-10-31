@@ -1,6 +1,6 @@
 {
   "name": "@vscode/node-speech",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Native bindings for Micrsooft Speech SDK",
   "repository": {
     "type": "git",
