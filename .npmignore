@@ -1,6 +1,12 @@
-azure-pipelines.yml
+.azure-pipelines
 .vscode
 build
 CODE_OF_CONDUCT.md
 SECURITY.md
 SUPPORT.md
+.cache
+test
+*.ts
+!*.d.ts
+*.js.map
+tsconfig.json

@@ -1,0 +1,53 @@
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+pr: [main]
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: microsoft/vscode-engineering
+      ref: main
+      endpoint: Monaco
+
+parameters:
+  - name: publishPackage
+    displayName: 🚀 Publish @vscode/node-speech
+    type: boolean
+    default: false
+
+extends:
+  template: azure-pipelines/npm-package/pipeline.yml@templates
+  parameters:
+    npmPackages:
+      - name: node-speech
+
+        buildSteps:
+          - script: npm ci
+            displayName: Install and build
+
+        testPlatforms:
+          - name: Linux
+            nodeVersions:
+              - 18.x
+          - name: MacOS
+            nodeVersions:
+              - 18.x
+          - name: Windows
+            nodeVersions:
+              - 18.x
+
+        testSteps:
+          - script: npm ci
+            displayName: Install and build
+
+          - script: npm run test
+            displayName: Test npm package
+
+        publishPackage: ${{ parameters.publishPackage }}

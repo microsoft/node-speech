@@ -6,9 +6,8 @@
 #include <napi.h>
 #include <speechapi_cxx.h>
 
-#include <iostream>
-#include <sstream>
 #include <string>
+#include <unordered_map>
 
 using namespace Microsoft::CognitiveServices::Speech;
 using namespace Microsoft::CognitiveServices::Speech::Audio;
@@ -62,8 +61,8 @@ class Worker : public Napi::AsyncProgressQueueWorker<WorkerCallbackResult>
 public:
   const int id;
 
-  Worker(std::string &path, std::string &key, std::string &model, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), key(key), model(model)
+  Worker(std::string &path, std::string &key, std::string &model, std::string &wavPath, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), key(key), model(model), wavPath(wavPath)
   {
     std::lock_guard<std::mutex> lock(runningWorkersMutex);
     runningWorkers[this->id] = std::promise<void>();
@@ -75,12 +74,21 @@ public:
     {
       auto speechConfig = EmbeddedSpeechConfig::FromPath(path);
       speechConfig->SetSpeechRecognitionModel(model, key);
-      auto audioConfig = AudioConfig::FromDefaultMicrophoneInput();
+      std::shared_ptr<AudioConfig> audioConfig;
+      if (this->wavPath.empty())
+      {
+        audioConfig = AudioConfig::FromDefaultMicrophoneInput();
+      }
+      else
+      {
+        audioConfig = AudioConfig::FromWavFileInput(this->wavPath);
+      }
       auto recognizer = SpeechRecognizer::FromConfig(speechConfig, audioConfig);
 
       auto phraseList = PhraseListGrammar::FromRecognizer(recognizer);
       phraseList->AddPhrase("VS Code");
       phraseList->AddPhrase("Visual Studio Code");
+      phraseList->AddPhrase("GitHub");
 
       // Callback: intermediate transcription results
       recognizer->Recognizing += [progress](const SpeechRecognitionEventArgs &e)
@@ -149,7 +157,7 @@ public:
         {
         case CancellationReason::Error:
         {
-          auto result = WorkerCallbackResult{StatusCode::END_SILENCE_TIMEOUT, e.ErrorDetails};
+          auto result = WorkerCallbackResult{StatusCode::ERROR, e.ErrorDetails};
           progress.Send(&result, 1);
           break;
         }
@@ -198,7 +206,7 @@ public:
     }
     catch (const std::exception &e)
     {
-      auto result = WorkerCallbackResult{StatusCode::END_SILENCE_TIMEOUT, e.what()};
+      auto result = WorkerCallbackResult{StatusCode::ERROR, e.what()};
       progress.Send(&result, 1);
     }
   }
@@ -238,6 +246,7 @@ private:
   std::string path;
   std::string key;
   std::string model;
+  std::string wavPath;
 };
 
 Napi::Value Transcribe(const Napi::CallbackInfo &info)
@@ -245,26 +254,39 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
   Napi::Env env = info.Env();
 
   // Validate args
-  if (info.Length() < 4)
+  if (info.Length() != 5)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || !info[3].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || (!info[3].IsUndefined() && !info[3].IsString()) || !info[4].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
 
-  auto path = info[0].As<Napi::String>().Utf8Value();
-  auto key = info[1].As<Napi::String>().Utf8Value();
-  auto model = info[2].As<Napi::String>().Utf8Value();
-  auto callback = info[3].As<Napi::Function>();
+  auto modelPath = info[0].As<Napi::String>().Utf8Value();
+  auto modelName = info[1].As<Napi::String>().Utf8Value();
+  auto modelKey = info[2].As<Napi::String>().Utf8Value();
+  std::string wavPath;
+  if (!info[3].IsUndefined())
+  {
+    wavPath = info[3].As<Napi::String>().Utf8Value();
+  }
+  auto callback = info[4].As<Napi::Function>();
 
-  Worker *worker = new Worker(path, key, model, callback);
-  worker->Queue();
+  try
+  {
+    Worker *worker = new Worker(modelPath, modelKey, modelName, wavPath, callback);
+    worker->Queue();
 
-  return Napi::Number::New(env, worker->id);
+    return Napi::Number::New(env, worker->id);
+  }
+  catch (const std::exception &e)
+  {
+    Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
 }
 
 Napi::Value Untranscribe(const Napi::CallbackInfo &info)

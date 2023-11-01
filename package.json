@@ -1,12 +1,12 @@
 {
-  "name": "speechapi",
-  "version": "1.0.0",
+  "name": "@vscode/node-speech",
+  "version": "1.0.9",
   "description": "Native bindings for Micrsooft Speech SDK",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/node-speechapi"
+    "url": "https://github.com/Microsoft/node-speech"
   },
-  "homepage": "https://github.com/Microsoft/node-speechapi",
+  "homepage": "https://github.com/Microsoft/node-speech",
   "keywords": [
     "vscode"
   ],
@@ -14,31 +14,30 @@
   "author": {
     "name": "Microsoft Corporation"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "preinstall": "node preinstall.js",
-    "postinstall": "tsc -p ./",
-    "build": "node-gyp build && tsc -p ./",
-    "compile": "tsc -p ./",
-    "prepare": "npm run build",
-    "install": "node-gyp rebuild",
-    "watch": "tsc -watch -p ./",
+    "install": "node preinstall.js",
+    "postinstall": "node-gyp rebuild",
+    "prepublish": "tsc",
+    "prepare": "npm run test",
+    "watch": "tsc -w",
     "test": "jest"
   },
   "devDependencies": {
-    "decompress": "^4.2.1",
-    "got": "^11.8.6",
-    "@types/node": "18.x",
     "@types/decompress": "^4.2.5",
-    "typescript": "^5.2.x",
     "@types/jest": "^29.5.5",
-    "jest": "^29.7.0"
+    "@types/node": "18.x",
+    "jest": "^29.7.0",
+    "typescript": "^5.2.x"
   },
   "dependencies": {
     "bindings": "^1.5.0",
-    "dotenv": "^16.3.1",
-    "node-addon-api": "^7.0.0"
+    "node-addon-api": "^7.0.0",
+    "yauzl": "^2.10.0"
   },
   "jest": {
     "testMatch": [
