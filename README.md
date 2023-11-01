@@ -20,7 +20,11 @@ const modelName = '<name of the speech model>';
 const modelPath = '<path to the speech model>';
 const modelKey = '<key for the speech model>';
 
-speech.transcribe({ modelName, modelPath, modelKey, signal }, (err, res) => console.log(err, res));
+// Live transcription from microphone
+speech.transcribe({ modelName, modelPath, modelKey, signal, wavPath: undefined }, (err, res) => console.log(err, res));
+
+// Transcription from *.wav file
+speech.transcribe({ modelName, modelPath, modelKey, signal, wavPath: 'path-to-wav-file' }, (err, res) => console.log(err, res));
 ```
 
 Refer to [index.d.ts](index.d.ts) for the full API.
