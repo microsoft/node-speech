@@ -77,6 +77,10 @@ public:
       std::shared_ptr<AudioConfig> audioConfig;
       if (this->wavPath.empty())
       {
+#ifdef _WIN32
+        auto audioProcessingOptions = AudioProcessingOptions::Create(AUDIO_INPUT_PROCESSING_ENABLE_V2);
+        audioConfig = AudioConfig::FromDefaultMicrophoneInput(audioProcessingOptions);
+#endif
         audioConfig = AudioConfig::FromDefaultMicrophoneInput();
       }
       else
