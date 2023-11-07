@@ -19,6 +19,7 @@ const packages = {
   'Microsoft.CognitiveServices.Speech.Extension.Embedded.SR': SDK_VERSION,
   // 'Microsoft.CognitiveServices.Speech.Extension.Embedded.TTS': SDK_VERSION,
   'Microsoft.CognitiveServices.Speech.Extension.ONNX.Runtime': SDK_VERSION,
+  'Microsoft.CognitiveServices.Speech.Extension.MAS': SDK_VERSION,
   // 'Microsoft.CognitiveServices.Speech.Extension.Telemetry': SDK_VERSION,
 };
 
