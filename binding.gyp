@@ -60,6 +60,7 @@
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.mas.lib',
             ],
           },
         }],
@@ -69,6 +70,7 @@
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.mas.lib',
             ],
           },
         }],
@@ -78,6 +80,7 @@
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.mas.lib',
             ],
           },
         }],
@@ -141,6 +144,7 @@
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
+                ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.mas.dll",
               ],
               "destination": "<(PRODUCT_DIR)"
           }],
@@ -153,6 +157,7 @@
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
+                ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.mas.dll",
               ],
               "destination": "<(PRODUCT_DIR)"
           }],
@@ -165,6 +170,7 @@
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
+                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.mas.dll",
               ],
               "destination": "<(PRODUCT_DIR)"
           }],
