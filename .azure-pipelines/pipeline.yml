@@ -29,9 +29,6 @@ extends:
       - name: node-speech
 
         buildSteps:
-          - script: python3 -m pip install setuptools
-            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
-            displayName: Install setuptools (macOS)
           - script: npm ci
             displayName: Install and build
 
@@ -47,6 +44,10 @@ extends:
               - 18.x
 
         testSteps:
+          - script: python3 -m pip install setuptools
+            condition: and(succeeded(), eq(variables['Agent.OS'], 'Darwin'))
+            displayName: Install setuptools (macOS)
+
           - script: npm ci
             displayName: Install and build
 
