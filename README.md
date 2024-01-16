@@ -7,24 +7,46 @@ A node.js binding for a subset of the [Azure Speech SDK](https://learn.microsoft
 ## Installation
 
 Install with npm:
+
 ```sh
 npm ci
 ```
 
-## Usage
+## Usage: Transcription
 
 ```ts
-import * as speech from '@vscode/node-speech';
+import * as speech from "@vscode/node-speech";
 
-const modelName = '<name of the speech model>';
-const modelPath = '<path to the speech model>';
-const modelKey = '<key for the speech model>';
+const modelName = "<name of the speech model>";
+const modelPath = "<path to the speech model>";
+const modelKey = "<key for the speech model>";
 
 // Live transcription from microphone
-speech.transcribe({ modelName, modelPath, modelKey, signal, wavPath: undefined }, (err, res) => console.log(err, res));
+speech.transcribe(
+  { modelName, modelPath, modelKey, signal, wavPath: undefined },
+  (err, res) => console.log(err, res)
+);
 
 // Transcription from *.wav file
-speech.transcribe({ modelName, modelPath, modelKey, signal, wavPath: 'path-to-wav-file' }, (err, res) => console.log(err, res));
+speech.transcribe(
+  { modelName, modelPath, modelKey, signal, wavPath: "path-to-wav-file" },
+  (err, res) => console.log(err, res)
+);
+```
+
+## Usage: Keyword Recognition
+
+```ts
+import * as speech from "@vscode/node-speech";
+
+const modelPath = "<path to the keyword model>";
+
+// Keyword recognition from microphone
+speech.recgonize(
+  { modelPath, signal },
+  (err) => console.log('Recognized')
+);
+
 ```
 
 ## Code of Conduct

@@ -12,30 +12,6 @@
 using namespace Microsoft::CognitiveServices::Speech;
 using namespace Microsoft::CognitiveServices::Speech::Audio;
 
-static int workerIds = 0;
-static std::unordered_map<int, std::promise<void>> runningWorkers;
-static std::mutex runningWorkersMutex;
-
-void StopWorker(int workerId)
-{
-  std::lock_guard<std::mutex> lock(runningWorkersMutex);
-  auto runningWorker = runningWorkers.find(workerId);
-  if (runningWorker != runningWorkers.end())
-  {
-    runningWorker->second.set_value();
-  }
-}
-
-void ClearWorker(int workerId)
-{
-  std::lock_guard<std::mutex> lock(runningWorkersMutex);
-  auto runningWorker = runningWorkers.find(workerId);
-  if (runningWorker != runningWorkers.end())
-  {
-    runningWorkers.erase(runningWorker);
-  }
-}
-
 enum StatusCode
 {
   STARTED = 1,
@@ -50,22 +26,48 @@ enum StatusCode
   ERROR = 10
 };
 
-struct WorkerCallbackResult
+#pragma region Transcription
+
+static int transcriptionWorkerIds = 0;
+static std::unordered_map<int, std::promise<void>> runningTranscriptionWorkers;
+static std::mutex runningTranscriptionWorkersMutex;
+
+void StopTranscriptionWorker(int workerId)
+{
+  std::lock_guard<std::mutex> lock(runningTranscriptionWorkersMutex);
+  auto runningTranscriptionWorker = runningTranscriptionWorkers.find(workerId);
+  if (runningTranscriptionWorker != runningTranscriptionWorkers.end())
+  {
+    runningTranscriptionWorker->second.set_value();
+  }
+}
+
+void ClearTranscriptionWorker(int workerId)
+{
+  std::lock_guard<std::mutex> lock(runningTranscriptionWorkersMutex);
+  auto runningTranscriptionWorker = runningTranscriptionWorkers.find(workerId);
+  if (runningTranscriptionWorker != runningTranscriptionWorkers.end())
+  {
+    runningTranscriptionWorkers.erase(runningTranscriptionWorker);
+  }
+}
+
+struct TranscriptionWorkerCallbackResult
 {
   StatusCode status;
   std::string data = "";
 };
 
-class Worker : public Napi::AsyncProgressQueueWorker<WorkerCallbackResult>
+class TranscriptionWorker : public Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>
 {
 public:
   const int id;
 
-  Worker(std::string &path, std::string &key, std::string &model, std::string &wavPath, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<WorkerCallbackResult>(callback), id(workerIds++), path(path), key(key), model(model), wavPath(wavPath)
+  TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &wavPath, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), wavPath(wavPath)
   {
-    std::lock_guard<std::mutex> lock(runningWorkersMutex);
-    runningWorkers[this->id] = std::promise<void>();
+    std::lock_guard<std::mutex> lock(runningTranscriptionWorkersMutex);
+    runningTranscriptionWorkers[this->id] = std::promise<void>();
   }
 
   void Execute(const ExecutionProgress &progress)
@@ -95,7 +97,7 @@ public:
       {
         if (e.Result->Reason == ResultReason::RecognizingSpeech)
         {
-          auto result = WorkerCallbackResult{StatusCode::RECOGNIZING, e.Result->Text};
+          auto result = TranscriptionWorkerCallbackResult{StatusCode::RECOGNIZING, e.Result->Text};
           progress.Send(&result, 1);
         }
       };
@@ -105,7 +107,7 @@ public:
       {
         if (e.Result->Reason == ResultReason::RecognizedSpeech)
         {
-          auto result = WorkerCallbackResult{StatusCode::RECOGNIZED, e.Result->Text};
+          auto result = TranscriptionWorkerCallbackResult{StatusCode::RECOGNIZED, e.Result->Text};
           progress.Send(&result, 1);
         }
         else if (e.Result->Reason == ResultReason::NoMatch)
@@ -116,7 +118,7 @@ public:
           // Input audio was not silent but contained no recognizable speech.
           case NoMatchReason::NotRecognized:
           {
-            auto result = WorkerCallbackResult{StatusCode::NOT_RECOGNIZED};
+            auto result = TranscriptionWorkerCallbackResult{StatusCode::NOT_RECOGNIZED};
             progress.Send(&result, 1);
             break;
           }
@@ -126,7 +128,7 @@ public:
           // a session, not just at the very beginning.
           case NoMatchReason::InitialSilenceTimeout:
           {
-            auto result = WorkerCallbackResult{StatusCode::INITIAL_SILENCE_TIMEOUT};
+            auto result = TranscriptionWorkerCallbackResult{StatusCode::INITIAL_SILENCE_TIMEOUT};
             progress.Send(&result, 1);
             break;
           }
@@ -138,7 +140,7 @@ public:
           // be InitialSilenceTimeout after this.
           case NoMatchReason::EndSilenceTimeout:
           {
-            auto result = WorkerCallbackResult{StatusCode::END_SILENCE_TIMEOUT};
+            auto result = TranscriptionWorkerCallbackResult{StatusCode::END_SILENCE_TIMEOUT};
             progress.Send(&result, 1);
             break;
           }
@@ -157,7 +159,7 @@ public:
         {
         case CancellationReason::Error:
         {
-          auto result = WorkerCallbackResult{StatusCode::ERROR, e.ErrorDetails};
+          auto result = TranscriptionWorkerCallbackResult{StatusCode::ERROR, e.ErrorDetails};
           progress.Send(&result, 1);
           break;
         }
@@ -171,7 +173,7 @@ public:
       recognizer->SessionStarted += [progress](const SessionEventArgs &e)
       {
         UNUSED(e);
-        auto result = WorkerCallbackResult{StatusCode::STARTED};
+        auto result = TranscriptionWorkerCallbackResult{StatusCode::STARTED};
         progress.Send(&result, 1);
       };
 
@@ -179,7 +181,7 @@ public:
       recognizer->SpeechStartDetected += [progress](const RecognitionEventArgs &e)
       {
         UNUSED(e);
-        auto result = WorkerCallbackResult{StatusCode::SPEECH_START_DETECTED};
+        auto result = TranscriptionWorkerCallbackResult{StatusCode::SPEECH_START_DETECTED};
         progress.Send(&result, 1);
       };
 
@@ -187,7 +189,7 @@ public:
       recognizer->SpeechEndDetected += [progress](const RecognitionEventArgs &e)
       {
         UNUSED(e);
-        auto result = WorkerCallbackResult{StatusCode::SPEECH_END_DETECTED};
+        auto result = TranscriptionWorkerCallbackResult{StatusCode::SPEECH_END_DETECTED};
         progress.Send(&result, 1);
       };
 
@@ -195,23 +197,23 @@ public:
       recognizer->SessionStopped += [this](const SessionEventArgs &e)
       {
         UNUSED(e);
-        StopWorker(this->id);
+        StopTranscriptionWorker(this->id);
       };
 
       // Starts continuous recognition and wait for end & stopping
       recognizer->StartContinuousRecognitionAsync().get();
-      runningWorkers[this->id].get_future().get();
+      runningTranscriptionWorkers[this->id].get_future().get();
       recognizer->StopContinuousRecognitionAsync().get();
-      ClearWorker(this->id);
+      ClearTranscriptionWorker(this->id);
     }
     catch (const std::exception &e)
     {
-      auto result = WorkerCallbackResult{StatusCode::ERROR, e.what()};
+      auto result = TranscriptionWorkerCallbackResult{StatusCode::ERROR, e.what()};
       progress.Send(&result, 1);
     }
   }
 
-  void OnProgress(const WorkerCallbackResult *result, size_t /* count */)
+  void OnProgress(const TranscriptionWorkerCallbackResult *result, size_t /* count */)
   {
     Napi::HandleScope scope(Env());
 
@@ -277,7 +279,7 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
 
   try
   {
-    Worker *worker = new Worker(modelPath, modelKey, modelName, wavPath, callback);
+    TranscriptionWorker *worker = new TranscriptionWorker(modelPath, modelKey, modelName, wavPath, callback);
     worker->Queue();
 
     return Napi::Number::New(env, worker->id);
@@ -306,15 +308,202 @@ Napi::Value Untranscribe(const Napi::CallbackInfo &info)
   }
 
   Napi::Number workerId = info[0].As<Napi::Number>();
-  StopWorker(workerId.Int32Value());
+  StopTranscriptionWorker(workerId.Int32Value());
 
   return env.Undefined();
 }
+
+#pragma endregion
+
+#pragma region KeywordRecognition
+
+static int keywordWorkerIds = 0;
+static std::unordered_map<int, std::promise<void>> runningKeywordWorkers;
+static std::mutex runningKeywordWorkersMutex;
+
+void StopKeywordWorker(int workerId)
+{
+  std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
+  auto runningKeywordWorker = runningKeywordWorkers.find(workerId);
+  if (runningKeywordWorker != runningKeywordWorkers.end())
+  {
+    runningKeywordWorker->second.set_value();
+  }
+}
+
+void ClearKeywordWorker(int workerId)
+{
+  std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
+  auto runningKeywordWorker = runningKeywordWorkers.find(workerId);
+  if (runningKeywordWorker != runningKeywordWorkers.end())
+  {
+    runningKeywordWorkers.erase(runningKeywordWorker);
+  }
+}
+
+struct KeywordWorkerCallbackResult
+{
+  StatusCode status;
+  std::string data = "";
+};
+
+class KeywordWorker : public Napi::AsyncProgressQueueWorker<KeywordWorkerCallbackResult>
+{
+public:
+  const int id;
+
+  KeywordWorker(std::string &path, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<KeywordWorkerCallbackResult>(callback), id(keywordWorkerIds++), path(path)
+  {
+    std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
+    runningKeywordWorkers[this->id] = std::promise<void>();
+  }
+
+  void Execute(const ExecutionProgress &progress)
+  {
+    try
+    {
+      auto keywordRecognitionConfig = KeywordRecognitionModel::FromFile(path);
+
+      auto audioConfig = AudioConfig::FromDefaultMicrophoneInput();
+      auto recognizer = KeywordRecognizer::FromConfig(audioConfig);
+
+      // Callback: keyword recognized
+      recognizer->Recognized += [progress](const KeywordRecognitionEventArgs &e)
+      {
+        auto result = KeywordWorkerCallbackResult{StatusCode::RECOGNIZED, e.Result->Text};
+        progress.Send(&result, 1);
+      };
+
+      // Callback: errors
+      recognizer->Canceled += [progress](const SpeechRecognitionCanceledEventArgs &e)
+      {
+        switch (e.Reason)
+        {
+        case CancellationReason::Error:
+        {
+          auto result = KeywordWorkerCallbackResult{StatusCode::ERROR, e.ErrorDetails};
+          progress.Send(&result, 1);
+          break;
+        }
+
+        default:
+          break;
+        }
+      };
+
+      // Starts keyword recognition and wait for end & stopping
+      recognizer->RecognizeOnceAsync(keywordRecognitionConfig).get();
+      runningKeywordWorkers[this->id].get_future().get();
+      recognizer->StopRecognitionAsync().get();
+      ClearKeywordWorker(this->id);
+    }
+    catch (const std::exception &e)
+    {
+      auto result = KeywordWorkerCallbackResult{StatusCode::ERROR, e.what()};
+      progress.Send(&result, 1);
+    }
+  }
+
+  void OnProgress(const KeywordWorkerCallbackResult *result, size_t /* count */)
+  {
+    Napi::HandleScope scope(Env());
+
+    Napi::Object jsResult = Napi::Object::New(Env());
+    jsResult.Set("status", Napi::Number::New(Env(), result->status));
+    if (!result->data.empty())
+    {
+      jsResult.Set("data", Napi::String::New(Env(), result->data));
+    }
+
+    Callback().Call({Env().Undefined(), jsResult});
+  }
+
+  void OnOK()
+  {
+    Napi::HandleScope scope(Env());
+
+    Napi::Object jsResult = Napi::Object::New(Env());
+    jsResult.Set("status", Napi::Number::New(Env(), StatusCode::STOPPED));
+
+    Callback().Call({Env().Undefined(), jsResult});
+  }
+
+  void OnError(const Napi::Error &e)
+  {
+    Napi::HandleScope scope(Env());
+
+    Callback().Call({Napi::String::New(Env(), e.Message())});
+  }
+
+private:
+  std::string path;
+};
+
+Napi::Value Recognize(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  // Validate args
+  if (info.Length() != 2)
+  {
+    Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  else if (!info[0].IsString() || !info[1].IsFunction())
+  {
+    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  auto modelPath = info[0].As<Napi::String>().Utf8Value();
+  auto callback = info[1].As<Napi::Function>();
+
+  try
+  {
+    KeywordWorker *worker = new KeywordWorker(modelPath, callback);
+    worker->Queue();
+
+    return Napi::Number::New(env, worker->id);
+  }
+  catch (const std::exception &e)
+  {
+    Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+}
+
+Napi::Value Unrecognize(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  // Validate args
+  if (info.Length() < 1)
+  {
+    Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  else if (!info[0].IsNumber())
+  {
+    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  Napi::Number workerId = info[0].As<Napi::Number>();
+  StopKeywordWorker(workerId.Int32Value());
+
+  return env.Undefined();
+}
+
+#pragma endregion
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
   exports.Set(Napi::String::New(env, "transcribe"), Napi::Function::New(env, Transcribe));
   exports.Set(Napi::String::New(env, "untranscribe"), Napi::Function::New(env, Untranscribe));
+
+  exports.Set(Napi::String::New(env, "recognize"), Napi::Function::New(env, Recognize));
+  exports.Set(Napi::String::New(env, "unrecognize"), Napi::Function::New(env, Unrecognize));
 
   return exports;
 }
