@@ -5,6 +5,19 @@
 
 export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 
+interface SpeechLib {
+
+  // Transcription
+  transcribe: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  untranscribe: (id: number) => void,
+
+  // Keyword Recognition
+  recognize: (modelPath: string, callback: (error: Error | undefined, result: IKeywordRecognitionResult) => void) => number,
+  unrecognize: (id: number) => void
+}
+
+//#region Transcription
+
 export enum TranscriptionStatusCode {
   STARTED = 1,
   RECOGNIZING = 2,
@@ -41,11 +54,6 @@ export interface ITranscriptionOptions {
   readonly signal: AbortSignal;
 }
 
-interface SpeechLib {
-  transcribe: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
-  untranscribe: (id: number) => void
-}
-
 export function transcribe({ modelPath, modelName, modelKey, signal, wavPath }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
   const id = speechapi.transcribe(modelPath, modelName, modelKey, wavPath, callback);
 
@@ -58,3 +66,42 @@ export function transcribe({ modelPath, modelName, modelKey, signal, wavPath }: 
 }
 
 export default transcribe;
+
+//#endregion
+
+//#region Keyword Recognition
+
+export enum KeywordRecognitionStatusCode {
+  RECOGNIZED = 3,
+  STOPPED = 9,
+  ERROR = 10
+}
+
+export interface IKeywordRecognitionResult {
+  readonly status: KeywordRecognitionStatusCode;
+  readonly data?: string;
+}
+
+export interface IKeywordRecognitionCallback {
+  (error: Error | undefined, result: IKeywordRecognitionResult): void;
+}
+
+export interface IKeywordRecognitionOptions {
+  readonly modelPath: string;
+
+  readonly signal: AbortSignal;
+}
+
+export function recognize({ modelPath, signal }: IKeywordRecognitionOptions, callback: IKeywordRecognitionCallback): void {
+  const id = speechapi.recognize(modelPath, callback);
+
+  const onAbort = () => {
+    speechapi.unrecognize(id);
+    signal.removeEventListener('abort', onAbort);
+  };
+
+  signal.addEventListener('abort', onAbort);
+}
+
+//#endregion
+
