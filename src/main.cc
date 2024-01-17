@@ -393,7 +393,12 @@ public:
       };
 
       // Starts keyword recognition and wait for end & stopping
-      recognizer->RecognizeOnceAsync(keywordRecognitionConfig).get();
+      // We use std::thread because RecognizeOnceAsync is blocking
+      // even though it returns a future (this seems to be a bug in
+      // the SDK)
+      std::thread([&recognizer, &keywordRecognitionConfig]()
+                  { recognizer->RecognizeOnceAsync(keywordRecognitionConfig); })
+          .detach();
       runningKeywordWorkers[this->id].get_future().get();
       recognizer->StopRecognitionAsync().get();
       ClearKeywordWorker(this->id);
