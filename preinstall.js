@@ -37,7 +37,7 @@ async function decompress(packagePath, outputPath) {
 
               try {
                 const filePath = path.join(outputPath, entry.fileName);
-                await fs.promises.mkdir(path.dirname(filePath), { recursive: true, force: true });
+                await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
                 const ostream = fs.createWriteStream(filePath);
                 await finished(istream.pipe(ostream));
                 resolve(undefined);
