@@ -44,7 +44,7 @@ const modelPath = "<path to the keyword model>";
 // Keyword recognition from microphone
 speech.recgonize(
   { modelPath, signal },
-  (err) => console.log('Recognized')
+  (err, res) => console.log(err, res)
 );
 
 ```

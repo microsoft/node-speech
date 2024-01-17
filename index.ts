@@ -69,7 +69,6 @@ export default transcribe;
 
 //#endregion
 
-
 //#region Keyword Recognition
 
 export enum KeywordRecognitionStatusCode {
