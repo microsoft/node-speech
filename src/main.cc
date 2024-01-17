@@ -369,10 +369,12 @@ public:
       auto recognizer = KeywordRecognizer::FromConfig(audioConfig);
 
       // Callback: keyword recognized
-      recognizer->Recognized += [progress](const KeywordRecognitionEventArgs &e)
+      recognizer->Recognized += [this, progress](const KeywordRecognitionEventArgs &e)
       {
         auto result = KeywordWorkerCallbackResult{StatusCode::RECOGNIZED, e.Result->Text};
         progress.Send(&result, 1);
+
+        StopKeywordWorker(this->id);
       };
 
       // Callback: errors
