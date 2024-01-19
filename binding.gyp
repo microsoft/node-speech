@@ -182,9 +182,9 @@
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
-                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.kws.so"
-                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.kws.ort.so"
-                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.so",
+                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.kws.so",
+                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.kws.ort.so",
+                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.so"
               ],
               "destination": "<(PRODUCT_DIR)"
           }],
