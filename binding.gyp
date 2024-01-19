@@ -154,7 +154,7 @@
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
-                ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
+                ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.kws.ort.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
               ],
