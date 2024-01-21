@@ -29,26 +29,43 @@ enum StatusCode
 #pragma region Transcription
 
 static int transcriptionWorkerIds = 0;
-static std::unordered_map<int, std::promise<void>> runningTranscriptionWorkers;
-static std::mutex runningTranscriptionWorkersMutex;
+static std::unordered_map<int, std::promise<void>> waitingToStartTranscriptionWorkers;
+static std::unordered_map<int, std::promise<void>> waitingToStopTranscriptionWorkers;
+static std::mutex transcriptionWorkersMutex;
+
+void StartTranscriptionWorker(int workerId)
+{
+  std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
+  auto waitingToStartTranscriptionWorker = waitingToStartTranscriptionWorkers.find(workerId);
+  if (waitingToStartTranscriptionWorker != waitingToStartTranscriptionWorkers.end())
+  {
+    waitingToStartTranscriptionWorker->second.set_value();
+  }
+}
 
 void StopTranscriptionWorker(int workerId)
 {
-  std::lock_guard<std::mutex> lock(runningTranscriptionWorkersMutex);
-  auto runningTranscriptionWorker = runningTranscriptionWorkers.find(workerId);
-  if (runningTranscriptionWorker != runningTranscriptionWorkers.end())
+  std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
+  auto waitingToStopTranscriptionWorker = waitingToStopTranscriptionWorkers.find(workerId);
+  if (waitingToStopTranscriptionWorker != waitingToStopTranscriptionWorkers.end())
   {
-    runningTranscriptionWorker->second.set_value();
+    waitingToStopTranscriptionWorker->second.set_value();
   }
 }
 
 void ClearTranscriptionWorker(int workerId)
 {
-  std::lock_guard<std::mutex> lock(runningTranscriptionWorkersMutex);
-  auto runningTranscriptionWorker = runningTranscriptionWorkers.find(workerId);
-  if (runningTranscriptionWorker != runningTranscriptionWorkers.end())
+  std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
+  auto waitingToStopTranscriptionWorker = waitingToStopTranscriptionWorkers.find(workerId);
+  if (waitingToStopTranscriptionWorker != waitingToStopTranscriptionWorkers.end())
   {
-    runningTranscriptionWorkers.erase(runningTranscriptionWorker);
+    waitingToStopTranscriptionWorkers.erase(waitingToStopTranscriptionWorker);
+  }
+
+  auto waitingToStartTranscriptionWorker = waitingToStartTranscriptionWorkers.find(workerId);
+  if (waitingToStartTranscriptionWorker != waitingToStartTranscriptionWorkers.end())
+  {
+    waitingToStartTranscriptionWorkers.erase(waitingToStartTranscriptionWorker);
   }
 }
 
@@ -66,8 +83,9 @@ public:
   TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &wavPath, Napi::Function &callback)
       : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), wavPath(wavPath)
   {
-    std::lock_guard<std::mutex> lock(runningTranscriptionWorkersMutex);
-    runningTranscriptionWorkers[this->id] = std::promise<void>();
+    std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
+    waitingToStartTranscriptionWorkers[this->id] = std::promise<void>();
+    waitingToStopTranscriptionWorkers[this->id] = std::promise<void>();
   }
 
   void Execute(const ExecutionProgress &progress)
@@ -200,9 +218,11 @@ public:
         StopTranscriptionWorker(this->id);
       };
 
-      // Starts continuous recognition and wait for end & stopping
+      // Start/stop of the worker is guarded with a barrier to allow
+      // that this can be called from the outside.
+      waitingToStartTranscriptionWorkers[this->id].get_future().get();
       recognizer->StartContinuousRecognitionAsync().get();
-      runningTranscriptionWorkers[this->id].get_future().get();
+      waitingToStopTranscriptionWorkers[this->id].get_future().get();
       recognizer->StopContinuousRecognitionAsync().get();
       ClearTranscriptionWorker(this->id);
     }
@@ -251,7 +271,7 @@ private:
   std::string wavPath;
 };
 
-Napi::Value Transcribe(const Napi::CallbackInfo &info)
+Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
@@ -291,7 +311,29 @@ Napi::Value Transcribe(const Napi::CallbackInfo &info)
   }
 }
 
-Napi::Value Untranscribe(const Napi::CallbackInfo &info)
+Napi::Value StartTranscriber(const Napi::CallbackInfo &info)
+{
+  Napi::Env env = info.Env();
+
+  // Validate args
+  if (info.Length() < 1)
+  {
+    Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  else if (!info[0].IsNumber())
+  {
+    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  Napi::Number workerId = info[0].As<Napi::Number>();
+  StartTranscriptionWorker(workerId.Int32Value());
+
+  return env.Undefined();
+}
+
+Napi::Value StopTranscriber(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
 
@@ -506,8 +548,9 @@ Napi::Value Unrecognize(const Napi::CallbackInfo &info)
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
-  exports.Set(Napi::String::New(env, "transcribe"), Napi::Function::New(env, Transcribe));
-  exports.Set(Napi::String::New(env, "untranscribe"), Napi::Function::New(env, Untranscribe));
+  exports.Set(Napi::String::New(env, "createTranscriber"), Napi::Function::New(env, CreateTranscriber));
+  exports.Set(Napi::String::New(env, "startTranscriber"), Napi::Function::New(env, StartTranscriber));
+  exports.Set(Napi::String::New(env, "stopTranscriber"), Napi::Function::New(env, StopTranscriber));
 
   exports.Set(Napi::String::New(env, "recognize"), Napi::Function::New(env, Recognize));
   exports.Set(Napi::String::New(env, "unrecognize"), Napi::Function::New(env, Unrecognize));

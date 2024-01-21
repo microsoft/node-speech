@@ -8,8 +8,9 @@ export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 interface SpeechLib {
 
   // Transcription
-  transcribe: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
-  untranscribe: (id: number) => void,
+  createTranscriber: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  startTranscriber: (id: number) => void,
+  stopTranscriber: (id: number) => void,
 
   // Keyword Recognition
   recognize: (modelPath: string, callback: (error: Error | undefined, result: IKeywordRecognitionResult) => void) => number,
@@ -54,18 +55,26 @@ export interface ITranscriptionOptions {
   readonly signal: AbortSignal;
 }
 
-export function transcribe({ modelPath, modelName, modelKey, signal, wavPath }: ITranscriptionOptions, callback: ITranscriptionCallback): void {
-  const id = speechapi.transcribe(modelPath, modelName, modelKey, wavPath, callback);
+export interface ITranscriber {
+  start(): void;
+  stop(): void;
+}
+
+export function createTranscriber({ modelPath, modelName, modelKey, signal, wavPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
+  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, wavPath, callback);
 
   const onAbort = () => {
-    speechapi.untranscribe(id);
+    speechapi.stopTranscriber(id);
     signal.removeEventListener('abort', onAbort);
   };
 
   signal.addEventListener('abort', onAbort);
-}
 
-export default transcribe;
+  return {
+    start: () => speechapi.startTranscriber(id),
+    stop: () => speechapi.stopTranscriber(id)
+  };
+}
 
 //#endregion
 
@@ -82,25 +91,29 @@ export interface IKeywordRecognitionResult {
   readonly data?: string;
 }
 
-export interface IKeywordRecognitionCallback {
-  (error: Error | undefined, result: IKeywordRecognitionResult): void;
-}
-
 export interface IKeywordRecognitionOptions {
   readonly modelPath: string;
 
   readonly signal: AbortSignal;
 }
 
-export function recognize({ modelPath, signal }: IKeywordRecognitionOptions, callback: IKeywordRecognitionCallback): void {
-  const id = speechapi.recognize(modelPath, callback);
+export function recognize({ modelPath, signal }: IKeywordRecognitionOptions): Promise<IKeywordRecognitionResult> {
+  return new Promise<IKeywordRecognitionResult>((resolve, reject) => {
+    const id = speechapi.recognize(modelPath, (error, result) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
 
-  const onAbort = () => {
-    speechapi.unrecognize(id);
-    signal.removeEventListener('abort', onAbort);
-  };
+    const onAbort = () => {
+      speechapi.unrecognize(id);
+      signal.removeEventListener('abort', onAbort);
+    };
 
-  signal.addEventListener('abort', onAbort);
+    signal.addEventListener('abort', onAbort);
+  });
 }
 
 //#endregion
