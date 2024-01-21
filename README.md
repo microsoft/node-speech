@@ -22,16 +22,22 @@ const modelPath = "<path to the speech model>";
 const modelKey = "<key for the speech model>";
 
 // Live transcription from microphone
-speech.transcribe(
+let transcriber = speech.createTranscriber(
   { modelName, modelPath, modelKey, signal, wavPath: undefined },
   (err, res) => console.log(err, res)
 );
+transcriber.start();
+// later when done...
+transcriber.stop();
 
 // Transcription from *.wav file
-speech.transcribe(
+transcriber = speech.createTranscriber(
   { modelName, modelPath, modelKey, signal, wavPath: "path-to-wav-file" },
   (err, res) => console.log(err, res)
 );
+transcriber.start();
+// later when done...
+transcriber.stop();
 ```
 
 ## Usage: Keyword Recognition
@@ -42,11 +48,8 @@ import * as speech from "@vscode/node-speech";
 const modelPath = "<path to the keyword model>";
 
 // Keyword recognition from microphone
-speech.recgonize(
-  { modelPath, signal },
-  (err, res) => console.log(err, res)
-);
-
+const result = await speech.recgonize({ modelPath, signal });
+console.log(result);
 ```
 
 ## Code of Conduct
