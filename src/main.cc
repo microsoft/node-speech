@@ -350,7 +350,6 @@ Napi::Value StopTranscriber(const Napi::CallbackInfo &info)
   }
 
   Napi::Number workerId = info[0].As<Napi::Number>();
-  StartTranscriptionWorker(workerId.Int32Value());
   StopTranscriptionWorker(workerId.Int32Value());
 
   return env.Undefined();
