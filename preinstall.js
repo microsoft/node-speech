@@ -12,12 +12,14 @@ const stream = require('stream');
 const { finished } = require('stream/promises');
 const yauzl = require('yauzl');
 
+const SDK_VERSION = '1.34.1';
+
 const packages = {
-  'Microsoft.CognitiveServices.Speech': '1.32.1',
-  'Microsoft.CognitiveServices.Speech.Extension.Embedded.SR': '1.32.1',
-  // 'Microsoft.CognitiveServices.Speech.Extension.Embedded.TTS': '1.32.1',
-  'Microsoft.CognitiveServices.Speech.Extension.ONNX.Runtime': '1.32.1',
-  // 'Microsoft.CognitiveServices.Speech.Extension.Telemetry': '1.32.1',
+  'Microsoft.CognitiveServices.Speech': SDK_VERSION,
+  'Microsoft.CognitiveServices.Speech.Extension.Embedded.SR': SDK_VERSION,
+  // 'Microsoft.CognitiveServices.Speech.Extension.Embedded.TTS': SDK_VERSION,
+  'Microsoft.CognitiveServices.Speech.Extension.ONNX.Runtime': SDK_VERSION,
+  // 'Microsoft.CognitiveServices.Speech.Extension.Telemetry': SDK_VERSION,
 };
 
 async function decompress(packagePath, outputPath) {
