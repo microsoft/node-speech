@@ -215,6 +215,7 @@ public:
       // Callback: end of recognition session
       recognizer->SessionStopped += [this](const SessionEventArgs &e)
       {
+        std::cout << "Session stopped" << std::endl;
         UNUSED(e);
         StopTranscriptionWorker(this->id);
       };

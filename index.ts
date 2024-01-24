@@ -122,12 +122,27 @@ if (require.main === module) {
 
   const controller = new AbortController();
 
-  recognize({
-    modelPath: 'path to model',
-    signal: controller.signal
-  }).then(result => {
-    console.log(result);
-  }).catch(error => {
-    console.log(error);
-  });
+  createTranscriber({
+    modelPath: 'model path',
+    modelName: 'model name',
+    modelKey: 'model key',
+    signal: controller.signal,
+    wavPath: undefined
+  }, (error, result) => {
+    console.log(error, result);
+  }).start();
+
+  setTimeout(() => {
+    console.log("aborting")
+    controller.abort();
+  }, 5000);
+
+  // recognize({
+  //   modelPath: 'path to model',
+  //   signal: controller.signal
+  // }).then(result => {
+  //   console.log(result);
+  // }).catch(error => {
+  //   console.log(error);
+  // });
 }
