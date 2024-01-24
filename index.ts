@@ -118,3 +118,16 @@ export function recognize({ modelPath, signal }: IKeywordRecognitionOptions): Pr
 
 //#endregion
 
+if (require.main === module) {
+
+  const controller = new AbortController();
+
+  recognize({
+    modelPath: 'path to model',
+    signal: controller.signal
+  }).then(result => {
+    console.log(result);
+  }).catch(error => {
+    console.log(error);
+  });
+}

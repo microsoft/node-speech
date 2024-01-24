@@ -93,6 +93,7 @@ public:
     try
     {
       auto speechConfig = EmbeddedSpeechConfig::FromPath(path);
+      // speechConfig->SetProperty(PropertyId::Speech_LogFilename, "/Users/bpasero/Development/Microsoft/vscode-node-speech/out.log");
       speechConfig->SetSpeechRecognitionModel(model, key);
       std::shared_ptr<AudioConfig> audioConfig;
       if (this->wavPath.empty())
@@ -440,9 +441,9 @@ public:
       // We use std::thread because RecognizeOnceAsync is blocking
       // even though it returns a future (this seems to be a bug in
       // the SDK)
-      std::thread([&recognizer, &keywordRecognitionConfig]()
-                  { recognizer->RecognizeOnceAsync(keywordRecognitionConfig); })
-          .detach();
+      std::cout << "Starting keyword recognition" << std::endl;
+      recognizer->RecognizeOnceAsync(keywordRecognitionConfig);
+      std::cout << "Waiting for keyword recognition to end" << std::endl;
       runningKeywordWorkers[this->id].get_future().get();
       recognizer->StopRecognitionAsync().get();
       ClearKeywordWorker(this->id);
