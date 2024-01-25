@@ -81,5 +81,8 @@
   },
   "git.branchProtection": [
     "main"
-  ]
+  ],
+  "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
+  "git.branchRandomName.enable": true,
+  "git.pullBeforeCheckout": true,
 }
