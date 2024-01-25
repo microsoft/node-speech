@@ -8,7 +8,7 @@ export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 interface SpeechLib {
 
   // Transcription
-  createTranscriber: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  createTranscriber: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, logsPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   startTranscriber: (id: number) => void,
   stopTranscriber: (id: number) => void,
 
@@ -50,7 +50,12 @@ export interface ITranscriptionOptions {
    * Path to the wav file to transcribe. If not specified, the audio 
    * will be streamed from the microphone.
    */
-  readonly wavPath: string | undefined;
+  readonly wavPath?: string;
+
+  /**
+   * Path to a file to store verbose logs from the Azure Speech SDK to.
+   */
+  readonly logsPath?: string;
 
   readonly signal: AbortSignal;
 }
@@ -60,8 +65,8 @@ export interface ITranscriber {
   stop(): void;
 }
 
-export function createTranscriber({ modelPath, modelName, modelKey, signal, wavPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
-  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, wavPath, callback);
+export function createTranscriber({ modelPath, modelName, modelKey, signal, wavPath, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
+  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, wavPath ?? undefined, logsPath ?? undefined, callback);
 
   const onAbort = () => {
     speechapi.stopTranscriber(id);
