@@ -40,6 +40,7 @@ void StartTranscriptionWorker(int workerId)
   if (waitingToStartTranscriptionWorker != waitingToStartTranscriptionWorkers.end())
   {
     waitingToStartTranscriptionWorker->second.set_value();
+    waitingToStartTranscriptionWorkers.erase(waitingToStartTranscriptionWorker);
   }
 }
 
@@ -50,22 +51,7 @@ void StopTranscriptionWorker(int workerId)
   if (waitingToStopTranscriptionWorker != waitingToStopTranscriptionWorkers.end())
   {
     waitingToStopTranscriptionWorker->second.set_value();
-  }
-}
-
-void ClearTranscriptionWorker(int workerId)
-{
-  std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
-  auto waitingToStopTranscriptionWorker = waitingToStopTranscriptionWorkers.find(workerId);
-  if (waitingToStopTranscriptionWorker != waitingToStopTranscriptionWorkers.end())
-  {
     waitingToStopTranscriptionWorkers.erase(waitingToStopTranscriptionWorker);
-  }
-
-  auto waitingToStartTranscriptionWorker = waitingToStartTranscriptionWorkers.find(workerId);
-  if (waitingToStartTranscriptionWorker != waitingToStartTranscriptionWorkers.end())
-  {
-    waitingToStartTranscriptionWorkers.erase(waitingToStartTranscriptionWorker);
   }
 }
 
@@ -86,6 +72,9 @@ public:
     std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
     waitingToStartTranscriptionWorkers[this->id] = std::promise<void>();
     waitingToStopTranscriptionWorkers[this->id] = std::promise<void>();
+
+    this->waitingToStart = waitingToStartTranscriptionWorkers[this->id].get_future();
+    this->waitingToStop = waitingToStopTranscriptionWorkers[this->id].get_future();
   }
 
   void Execute(const ExecutionProgress &progress)
@@ -220,11 +209,10 @@ public:
 
       // Start/stop of the worker is guarded with a barrier to allow
       // that this can be called from the outside.
-      waitingToStartTranscriptionWorkers[this->id].get_future().get();
+      this->waitingToStart.get();
       recognizer->StartContinuousRecognitionAsync().get();
-      waitingToStopTranscriptionWorkers[this->id].get_future().get();
+      this->waitingToStop.get();
       recognizer->StopContinuousRecognitionAsync().get();
-      ClearTranscriptionWorker(this->id);
     }
     catch (const std::exception &e)
     {
@@ -269,6 +257,8 @@ private:
   std::string key;
   std::string model;
   std::string wavPath;
+  std::future<void> waitingToStart;
+  std::future<void> waitingToStop;
 };
 
 Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
@@ -370,15 +360,6 @@ void StopKeywordWorker(int workerId)
   if (runningKeywordWorker != runningKeywordWorkers.end())
   {
     runningKeywordWorker->second.set_value();
-  }
-}
-
-void ClearKeywordWorker(int workerId)
-{
-  std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
-  auto runningKeywordWorker = runningKeywordWorkers.find(workerId);
-  if (runningKeywordWorker != runningKeywordWorkers.end())
-  {
     runningKeywordWorkers.erase(runningKeywordWorker);
   }
 }
@@ -399,6 +380,8 @@ public:
   {
     std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
     runningKeywordWorkers[this->id] = std::promise<void>();
+
+    this->waitingToStop = runningKeywordWorkers[this->id].get_future();
   }
 
   void Execute(const ExecutionProgress &progress)
@@ -443,9 +426,8 @@ public:
       std::thread([&recognizer, &keywordRecognitionConfig]()
                   { recognizer->RecognizeOnceAsync(keywordRecognitionConfig); })
           .detach();
-      runningKeywordWorkers[this->id].get_future().get();
+      this->waitingToStop.get();
       recognizer->StopRecognitionAsync().get();
-      ClearKeywordWorker(this->id);
     }
     catch (const std::exception &e)
     {
@@ -487,6 +469,7 @@ public:
 
 private:
   std::string path;
+  std::future<void> waitingToStop;
 };
 
 Napi::Value Recognize(const Napi::CallbackInfo &info)
