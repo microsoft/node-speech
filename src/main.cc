@@ -99,11 +99,6 @@ public:
       }
       auto recognizer = SpeechRecognizer::FromConfig(speechConfig, audioConfig);
 
-      auto phraseList = PhraseListGrammar::FromRecognizer(recognizer);
-      phraseList->AddPhrase("VS Code");
-      phraseList->AddPhrase("Visual Studio Code");
-      phraseList->AddPhrase("GitHub");
-
       // Callback: intermediate transcription results
       recognizer->Recognizing += [progress](const SpeechRecognitionEventArgs &e)
       {
@@ -431,12 +426,13 @@ public:
       };
 
       // Starts keyword recognition and wait for end & stopping
-      // We use std::thread because RecognizeOnceAsync is blocking
-      // even though it returns a future (this seems to be a bug in
-      // the SDK)
-      std::thread([&recognizer, &keywordRecognitionConfig]()
-                  { recognizer->RecognizeOnceAsync(keywordRecognitionConfig); })
-          .detach();
+      // We need to assign the future to a variable to avoid the
+      // future automatically getting destroyed, which would block
+      // the thread.
+      //
+      // Refs: https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/2229
+      // https://stackoverflow.com/questions/23455104/why-is-the-destructor-of-a-future-returned-from-stdasync-blocking
+      auto recognitionFuture = recognizer->RecognizeOnceAsync(keywordRecognitionConfig);
       this->waitingToStop.get();
       recognizer->StopRecognitionAsync().get();
     }
