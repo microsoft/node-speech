@@ -321,7 +321,7 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
   }
   auto phrasesRaw = info[4].As<Napi::Array>();
   std::vector<std::string> phrases;
-  for (size_t i = 0; i < phrasesRaw.Length(); i++)
+  for (uint32_t i = 0; i < static_cast<uint32_t>(phrasesRaw.Length()); i++)
   {
     phrases.push_back(phrasesRaw.Get(i).As<Napi::String>().Utf8Value());
   }
