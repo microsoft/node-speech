@@ -8,7 +8,7 @@ export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 interface SpeechLib {
 
   // Transcription
-  createTranscriber: (modelPath: string, modelName: string, modelKey: string, logsPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  createTranscriber: (modelPath: string, modelName: string, modelKey: string, logsPath: string | undefined, phrases: string[], callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   startTranscriber: (id: number) => void,
   stopTranscriber: (id: number) => void,
   disposeTranscriber: (id: number) => void,
@@ -49,9 +49,20 @@ export interface ITranscriptionOptions {
   readonly modelKey: string;
 
   /**
-   * Path to a file to store verbose logs from the Azure Speech SDK to.
+   * The path to a file to store verbose logs from the Azure Speech SDK to.
+   * 
+   * @see https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-use-logging
    */
   readonly logsPath?: string;
+
+  /**
+   * A phrase list is a list of words or phrases provided ahead of time to help 
+   * improve their recognition. Adding a phrase to a phrase list increases its 
+   * importance, thus making it more likely to be recognized.
+   * 
+   * @see https://learn.microsoft.com/en-us/azure/ai-services/speech-service/improve-accuracy-phrase-list
+   */
+  readonly phrases?: string[];
 }
 
 export interface ITranscriber {
@@ -60,8 +71,8 @@ export interface ITranscriber {
   dispose(): void;
 }
 
-export function createTranscriber({ modelPath, modelName, modelKey, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
-  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, logsPath ?? undefined, callback);
+export function createTranscriber({ modelPath, modelName, modelKey, phrases, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
+  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, logsPath ?? undefined, phrases ?? [], callback);
 
   return {
     start: () => speechapi.startTranscriber(id),
