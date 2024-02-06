@@ -8,6 +8,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <thread>
 
 using namespace Microsoft::CognitiveServices::Speech;
 using namespace Microsoft::CognitiveServices::Speech::Audio;
