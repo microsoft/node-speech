@@ -80,7 +80,7 @@ public:
   TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &wavPath, std::string &logsPath, Napi::Function &callback)
       : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), wavPath(wavPath), logsPath(logsPath), started(false)
   {
-    UpdateTranscriptionWorkerStatus(this->id, RuntimeStatus::START);
+    UpdateTranscriptionWorkerStatus(this->id, RuntimeStatus::STOP);
   }
 
   void Execute(const ExecutionProgress &progress)
