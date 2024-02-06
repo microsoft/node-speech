@@ -77,8 +77,8 @@ class TranscriptionWorker : public Napi::AsyncProgressQueueWorker<TranscriptionW
 public:
   const int id;
 
-  TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &wavPath, std::string &logsPath, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), wavPath(wavPath), logsPath(logsPath), started(false)
+  TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &logsPath, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), logsPath(logsPath), started(false)
   {
     UpdateTranscriptionWorkerStatus(this->id, RuntimeStatus::STOP);
   }
@@ -94,15 +94,7 @@ public:
         speechConfig->SetProperty(PropertyId::Speech_LogFilename, logsPath);
       }
 
-      std::shared_ptr<AudioConfig> audioConfig;
-      if (this->wavPath.empty())
-      {
-        audioConfig = AudioConfig::FromDefaultMicrophoneInput();
-      }
-      else
-      {
-        audioConfig = AudioConfig::FromWavFileInput(this->wavPath);
-      }
+      auto audioConfig = AudioConfig::FromDefaultMicrophoneInput();
       auto recognizer = SpeechRecognizer::FromConfig(speechConfig, audioConfig);
 
       // Callback: intermediate transcription results
@@ -290,7 +282,6 @@ private:
   std::string path;
   std::string key;
   std::string model;
-  std::string wavPath;
   std::string logsPath;
   bool started;
 };
@@ -300,12 +291,12 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
   auto env = info.Env();
 
   // Validate args
-  if (info.Length() != 6)
+  if (info.Length() != 5)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || (!info[3].IsUndefined() && !info[3].IsString()) || (!info[4].IsUndefined() && !info[4].IsString()) || !info[5].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || (!info[3].IsUndefined() && !info[3].IsString()) || !info[4].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
@@ -314,11 +305,6 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
   auto modelPath = info[0].As<Napi::String>().Utf8Value();
   auto modelName = info[1].As<Napi::String>().Utf8Value();
   auto modelKey = info[2].As<Napi::String>().Utf8Value();
-  std::string wavPath;
-  if (!info[3].IsUndefined())
-  {
-    wavPath = info[3].As<Napi::String>().Utf8Value();
-  }
   std::string logsPath;
   if (!info[4].IsUndefined())
   {
@@ -328,7 +314,7 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
 
   try
   {
-    auto *worker = new TranscriptionWorker(modelPath, modelKey, modelName, wavPath, logsPath, callback);
+    auto *worker = new TranscriptionWorker(modelPath, modelKey, modelName, logsPath, callback);
     worker->Queue();
 
     return Napi::Number::New(env, worker->id);
