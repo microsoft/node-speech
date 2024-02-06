@@ -8,9 +8,10 @@ export const speechapi = require('bindings')('speechapi.node') as SpeechLib;
 interface SpeechLib {
 
   // Transcription
-  createTranscriber: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, logsPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
+  createTranscriber: (modelPath: string, modelName: string, modelKey: string, logsPath: string | undefined, phrases: string[], callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   startTranscriber: (id: number) => void,
   stopTranscriber: (id: number) => void,
+  disposeTranscriber: (id: number) => void,
 
   // Keyword Recognition
   recognize: (modelPath: string, callback: (error: Error | undefined, result: IKeywordRecognitionResult) => void) => number,
@@ -29,7 +30,8 @@ export enum TranscriptionStatusCode {
   SPEECH_START_DETECTED = 7,
   SPEECH_END_DETECTED = 8,
   STOPPED = 9,
-  ERROR = 10
+  DISPOSED = 10,
+  ERROR = 11
 }
 
 export interface ITranscriptionResult {
@@ -47,37 +49,35 @@ export interface ITranscriptionOptions {
   readonly modelKey: string;
 
   /**
-   * Path to the wav file to transcribe. If not specified, the audio 
-   * will be streamed from the microphone.
-   */
-  readonly wavPath?: string;
-
-  /**
-   * Path to a file to store verbose logs from the Azure Speech SDK to.
+   * The path to a file to store verbose logs from the Azure Speech SDK to.
+   * 
+   * @see https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-use-logging
    */
   readonly logsPath?: string;
 
-  readonly signal: AbortSignal;
+  /**
+   * A phrase list is a list of words or phrases provided ahead of time to help 
+   * improve their recognition. Adding a phrase to a phrase list increases its 
+   * importance, thus making it more likely to be recognized.
+   * 
+   * @see https://learn.microsoft.com/en-us/azure/ai-services/speech-service/improve-accuracy-phrase-list
+   */
+  readonly phrases?: string[];
 }
 
 export interface ITranscriber {
   start(): void;
   stop(): void;
+  dispose(): void;
 }
 
-export function createTranscriber({ modelPath, modelName, modelKey, signal, wavPath, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
-  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, wavPath ?? undefined, logsPath ?? undefined, callback);
-
-  const onAbort = () => {
-    speechapi.stopTranscriber(id);
-    signal.removeEventListener('abort', onAbort);
-  };
-
-  signal.addEventListener('abort', onAbort);
+export function createTranscriber({ modelPath, modelName, modelKey, phrases, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
+  const id = speechapi.createTranscriber(modelPath, modelName, modelKey, logsPath ?? undefined, phrases ?? [], callback);
 
   return {
     start: () => speechapi.startTranscriber(id),
-    stop: () => speechapi.stopTranscriber(id)
+    stop: () => speechapi.stopTranscriber(id),
+    dispose: () => speechapi.disposeTranscriber(id)
   };
 }
 
@@ -88,7 +88,7 @@ export function createTranscriber({ modelPath, modelName, modelKey, signal, wavP
 export enum KeywordRecognitionStatusCode {
   RECOGNIZED = 3,
   STOPPED = 9,
-  ERROR = 10
+  ERROR = 11
 }
 
 export interface IKeywordRecognitionResult {

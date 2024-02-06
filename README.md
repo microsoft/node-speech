@@ -23,21 +23,15 @@ const modelKey = "<key for the speech model>";
 
 // Live transcription from microphone
 let transcriber = speech.createTranscriber(
-  { modelName, modelPath, modelKey, signal, wavPath: undefined },
+  { modelName, modelPath, modelKey },
   (err, res) => console.log(err, res)
 );
 transcriber.start();
-// later when done...
+// you can stop/start later
 transcriber.stop();
-
-// Transcription from *.wav file
-transcriber = speech.createTranscriber(
-  { modelName, modelPath, modelKey, signal, wavPath: "path-to-wav-file" },
-  (err, res) => console.log(err, res)
-);
 transcriber.start();
 // later when done...
-transcriber.stop();
+transcriber.dispose();
 ```
 
 ## Usage: Keyword Recognition
