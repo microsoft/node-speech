@@ -175,8 +175,10 @@ public:
       };
 
       // Callback: begin of recognition session
-      recognizer->SessionStarted += [progress](const SessionEventArgs &e)
+      recognizer->SessionStarted += [this, progress](const SessionEventArgs &e)
       {
+        this->started = true;
+
         UNUSED(e);
         auto result = TranscriptionWorkerCallbackResult{StatusCode::STARTED};
         progress.Send(&result, 1);
@@ -199,8 +201,10 @@ public:
       };
 
       // Callback: end of recognition session
-      recognizer->SessionStopped += [progress](const SessionEventArgs &e)
+      recognizer->SessionStopped += [this, progress](const SessionEventArgs &e)
       {
+        this->started = false;
+
         UNUSED(e);
         auto result = TranscriptionWorkerCallbackResult{StatusCode::STOPPED};
         progress.Send(&result, 1);
@@ -215,14 +219,12 @@ public:
           if (!this->started)
           {
             recognizer->StartContinuousRecognitionAsync().get();
-            this->started = true;
           }
           break;
         case RuntimeStatus::STOP:
           if (this->started)
           {
             recognizer->StopContinuousRecognitionAsync().get();
-            this->started = false;
           }
           break;
         case RuntimeStatus::DISPOSE:
@@ -235,7 +237,6 @@ public:
       if (this->started)
       {
         recognizer->StopContinuousRecognitionAsync().get();
-        this->started = false;
       }
 
       RemoveTranscriptionWorkerStatus(this->id);
@@ -306,11 +307,11 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
   auto modelName = info[1].As<Napi::String>().Utf8Value();
   auto modelKey = info[2].As<Napi::String>().Utf8Value();
   std::string logsPath;
-  if (!info[4].IsUndefined())
+  if (!info[3].IsUndefined())
   {
-    logsPath = info[4].As<Napi::String>().Utf8Value();
+    logsPath = info[3].As<Napi::String>().Utf8Value();
   }
-  auto callback = info[5].As<Napi::Function>();
+  auto callback = info[4].As<Napi::Function>();
 
   try
   {
