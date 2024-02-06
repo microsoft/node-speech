@@ -40,6 +40,7 @@ void StartTranscriptionWorker(int workerId)
   if (waitingToStartTranscriptionWorker != waitingToStartTranscriptionWorkers.end())
   {
     waitingToStartTranscriptionWorker->second.set_value();
+    waitingToStartTranscriptionWorkers.erase(waitingToStartTranscriptionWorker);
   }
 }
 
@@ -50,22 +51,7 @@ void StopTranscriptionWorker(int workerId)
   if (waitingToStopTranscriptionWorker != waitingToStopTranscriptionWorkers.end())
   {
     waitingToStopTranscriptionWorker->second.set_value();
-  }
-}
-
-void ClearTranscriptionWorker(int workerId)
-{
-  std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
-  auto waitingToStopTranscriptionWorker = waitingToStopTranscriptionWorkers.find(workerId);
-  if (waitingToStopTranscriptionWorker != waitingToStopTranscriptionWorkers.end())
-  {
     waitingToStopTranscriptionWorkers.erase(waitingToStopTranscriptionWorker);
-  }
-
-  auto waitingToStartTranscriptionWorker = waitingToStartTranscriptionWorkers.find(workerId);
-  if (waitingToStartTranscriptionWorker != waitingToStartTranscriptionWorkers.end())
-  {
-    waitingToStartTranscriptionWorkers.erase(waitingToStartTranscriptionWorker);
   }
 }
 
@@ -80,12 +66,15 @@ class TranscriptionWorker : public Napi::AsyncProgressQueueWorker<TranscriptionW
 public:
   const int id;
 
-  TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &wavPath, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), wavPath(wavPath)
+  TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &wavPath, std::string &logsPath, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), wavPath(wavPath), logsPath(logsPath)
   {
     std::lock_guard<std::mutex> lock(transcriptionWorkersMutex);
     waitingToStartTranscriptionWorkers[this->id] = std::promise<void>();
     waitingToStopTranscriptionWorkers[this->id] = std::promise<void>();
+
+    this->waitingToStart = waitingToStartTranscriptionWorkers[this->id].get_future();
+    this->waitingToStop = waitingToStopTranscriptionWorkers[this->id].get_future();
   }
 
   void Execute(const ExecutionProgress &progress)
@@ -94,6 +83,11 @@ public:
     {
       auto speechConfig = EmbeddedSpeechConfig::FromPath(path);
       speechConfig->SetSpeechRecognitionModel(model, key);
+      if (!this->logsPath.empty())
+      {
+        speechConfig->SetProperty(PropertyId::Speech_LogFilename, logsPath);
+      }
+
       std::shared_ptr<AudioConfig> audioConfig;
       if (this->wavPath.empty())
       {
@@ -104,11 +98,6 @@ public:
         audioConfig = AudioConfig::FromWavFileInput(this->wavPath);
       }
       auto recognizer = SpeechRecognizer::FromConfig(speechConfig, audioConfig);
-
-      auto phraseList = PhraseListGrammar::FromRecognizer(recognizer);
-      phraseList->AddPhrase("VS Code");
-      phraseList->AddPhrase("Visual Studio Code");
-      phraseList->AddPhrase("GitHub");
 
       // Callback: intermediate transcription results
       recognizer->Recognizing += [progress](const SpeechRecognitionEventArgs &e)
@@ -220,11 +209,10 @@ public:
 
       // Start/stop of the worker is guarded with a barrier to allow
       // that this can be called from the outside.
-      waitingToStartTranscriptionWorkers[this->id].get_future().get();
+      this->waitingToStart.get();
       recognizer->StartContinuousRecognitionAsync().get();
-      waitingToStopTranscriptionWorkers[this->id].get_future().get();
+      this->waitingToStop.get();
       recognizer->StopContinuousRecognitionAsync().get();
-      ClearTranscriptionWorker(this->id);
     }
     catch (const std::exception &e)
     {
@@ -269,6 +257,9 @@ private:
   std::string key;
   std::string model;
   std::string wavPath;
+  std::string logsPath;
+  std::future<void> waitingToStart;
+  std::future<void> waitingToStop;
 };
 
 Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
@@ -276,12 +267,12 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
   Napi::Env env = info.Env();
 
   // Validate args
-  if (info.Length() != 5)
+  if (info.Length() != 6)
   {
     Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
     return env.Undefined();
   }
-  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || (!info[3].IsUndefined() && !info[3].IsString()) || !info[4].IsFunction())
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || (!info[3].IsUndefined() && !info[3].IsString()) || (!info[4].IsUndefined() && !info[4].IsString()) || !info[5].IsFunction())
   {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return env.Undefined();
@@ -295,11 +286,16 @@ Napi::Value CreateTranscriber(const Napi::CallbackInfo &info)
   {
     wavPath = info[3].As<Napi::String>().Utf8Value();
   }
-  auto callback = info[4].As<Napi::Function>();
+  std::string logsPath;
+  if (!info[4].IsUndefined())
+  {
+    logsPath = info[4].As<Napi::String>().Utf8Value();
+  }
+  auto callback = info[5].As<Napi::Function>();
 
   try
   {
-    TranscriptionWorker *worker = new TranscriptionWorker(modelPath, modelKey, modelName, wavPath, callback);
+    TranscriptionWorker *worker = new TranscriptionWorker(modelPath, modelKey, modelName, wavPath, logsPath, callback);
     worker->Queue();
 
     return Napi::Number::New(env, worker->id);
@@ -370,15 +366,6 @@ void StopKeywordWorker(int workerId)
   if (runningKeywordWorker != runningKeywordWorkers.end())
   {
     runningKeywordWorker->second.set_value();
-  }
-}
-
-void ClearKeywordWorker(int workerId)
-{
-  std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
-  auto runningKeywordWorker = runningKeywordWorkers.find(workerId);
-  if (runningKeywordWorker != runningKeywordWorkers.end())
-  {
     runningKeywordWorkers.erase(runningKeywordWorker);
   }
 }
@@ -399,6 +386,8 @@ public:
   {
     std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
     runningKeywordWorkers[this->id] = std::promise<void>();
+
+    this->waitingToStop = runningKeywordWorkers[this->id].get_future();
   }
 
   void Execute(const ExecutionProgress &progress)
@@ -437,15 +426,15 @@ public:
       };
 
       // Starts keyword recognition and wait for end & stopping
-      // We use std::thread because RecognizeOnceAsync is blocking
-      // even though it returns a future (this seems to be a bug in
-      // the SDK)
-      std::thread([&recognizer, &keywordRecognitionConfig]()
-                  { recognizer->RecognizeOnceAsync(keywordRecognitionConfig); })
-          .detach();
-      runningKeywordWorkers[this->id].get_future().get();
+      // We need to assign the future to a variable to avoid the
+      // future automatically getting destroyed, which would block
+      // the thread.
+      //
+      // Refs: https://github.com/Azure-Samples/cognitive-services-speech-sdk/issues/2229
+      // https://stackoverflow.com/questions/23455104/why-is-the-destructor-of-a-future-returned-from-stdasync-blocking
+      auto recognitionFuture = recognizer->RecognizeOnceAsync(keywordRecognitionConfig);
+      this->waitingToStop.get();
       recognizer->StopRecognitionAsync().get();
-      ClearKeywordWorker(this->id);
     }
     catch (const std::exception &e)
     {
@@ -487,6 +476,7 @@ public:
 
 private:
   std::string path;
+  std::future<void> waitingToStop;
 };
 
 Napi::Value Recognize(const Napi::CallbackInfo &info)
