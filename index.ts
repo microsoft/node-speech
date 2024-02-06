@@ -11,6 +11,7 @@ interface SpeechLib {
   createTranscriber: (modelPath: string, modelName: string, modelKey: string, wavPath: string | undefined, logsPath: string | undefined, callback: (error: Error | undefined, result: ITranscriptionResult) => void) => number,
   startTranscriber: (id: number) => void,
   stopTranscriber: (id: number) => void,
+  disposeTranscriber: (id: number) => void,
 
   // Keyword Recognition
   recognize: (modelPath: string, callback: (error: Error | undefined, result: IKeywordRecognitionResult) => void) => number,
@@ -29,7 +30,8 @@ export enum TranscriptionStatusCode {
   SPEECH_START_DETECTED = 7,
   SPEECH_END_DETECTED = 8,
   STOPPED = 9,
-  ERROR = 10
+  DISPOSED = 10,
+  ERROR = 11
 }
 
 export interface ITranscriptionResult {
@@ -56,28 +58,21 @@ export interface ITranscriptionOptions {
    * Path to a file to store verbose logs from the Azure Speech SDK to.
    */
   readonly logsPath?: string;
-
-  readonly signal: AbortSignal;
 }
 
 export interface ITranscriber {
   start(): void;
   stop(): void;
+  dispose(): void;
 }
 
-export function createTranscriber({ modelPath, modelName, modelKey, signal, wavPath, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
+export function createTranscriber({ modelPath, modelName, modelKey, wavPath, logsPath }: ITranscriptionOptions, callback: ITranscriptionCallback): ITranscriber {
   const id = speechapi.createTranscriber(modelPath, modelName, modelKey, wavPath ?? undefined, logsPath ?? undefined, callback);
-
-  const onAbort = () => {
-    speechapi.stopTranscriber(id);
-    signal.removeEventListener('abort', onAbort);
-  };
-
-  signal.addEventListener('abort', onAbort);
 
   return {
     start: () => speechapi.startTranscriber(id),
-    stop: () => speechapi.stopTranscriber(id)
+    stop: () => speechapi.stopTranscriber(id),
+    dispose: () => speechapi.disposeTranscriber(id)
   };
 }
 
@@ -88,7 +83,7 @@ export function createTranscriber({ modelPath, modelName, modelKey, signal, wavP
 export enum KeywordRecognitionStatusCode {
   RECOGNIZED = 3,
   STOPPED = 9,
-  ERROR = 10
+  ERROR = 11
 }
 
 export interface IKeywordRecognitionResult {

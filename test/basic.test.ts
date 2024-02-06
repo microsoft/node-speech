@@ -12,6 +12,7 @@ describe('Basics', () => {
 			createTranscriber: expect.any(Function),
 			startTranscriber: expect.any(Function),
 			stopTranscriber: expect.any(Function),
+			disposeTranscriber: expect.any(Function),
 			recognize: expect.any(Function),
 			unrecognize: expect.any(Function)
 		}));
