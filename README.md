@@ -26,7 +26,6 @@ let transcriber = speech.createTranscriber(
   { modelName, modelPath, modelKey },
   (err, res) => console.log(err, res)
 );
-transcriber.start();
 // you can stop/start later
 transcriber.stop();
 transcriber.start();

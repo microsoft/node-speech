@@ -81,7 +81,7 @@ public:
   TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &logsPath, std::vector<std::string> &phrases, Napi::Function &callback)
       : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), logsPath(logsPath), phrases(phrases), started(false)
   {
-    UpdateTranscriptionWorkerStatus(this->id, RuntimeStatus::STOP);
+    UpdateTranscriptionWorkerStatus(this->id, RuntimeStatus::START);
   }
 
   void Execute(const ExecutionProgress &progress)
