@@ -164,13 +164,13 @@
         ['OS=="win" and target_arch=="arm64"', {
           "copies": [{
               "files": [
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.core.dll",
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.ort.dll",
-                ".cache/SpeechSDK/runtimes/win10-arm64/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.core.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.ort.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.onnxruntime.dll",
               ],
               "destination": "<(PRODUCT_DIR)"
           }],
