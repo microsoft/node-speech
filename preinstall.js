@@ -12,7 +12,7 @@ const stream = require('stream');
 const { finished } = require('stream/promises');
 const yauzl = require('yauzl');
 
-const SDK_VERSION = '1.35.0';
+const SDK_VERSION = '1.37.0';
 
 const packages = {
   'Microsoft.CognitiveServices.Speech': SDK_VERSION,
