@@ -430,14 +430,14 @@ std::queue<std::string> &GetSynthesizerTextQueue(int workerId)
 void AddTextToSynthesize(int workerId, std::string &text)
 {
   std::lock_guard<std::mutex> lock(synthesizerTextMutex);
-  auto& queue = GetSynthesizerTextQueue(workerId);
+  auto &queue = GetSynthesizerTextQueue(workerId);
   queue.push(text);
 }
 
 std::string GetNextTextToSynthesize(int workerId)
 {
   std::lock_guard<std::mutex> lock(synthesizerTextMutex);
-  auto& queue = GetSynthesizerTextQueue(workerId);
+  auto &queue = GetSynthesizerTextQueue(workerId);
   if (queue.empty())
   {
     return "";
@@ -465,7 +465,7 @@ public:
   const int id;
 
   SynthesizerWorker(std::string &path, std::string &key, std::string &model, std::string &logsPath, Napi::Function &callback)
-      : Napi::AsyncProgressQueueWorker<SynthesizerWorkerCallbackResult>(callback), id(synthesizerWorkerIds++), path(path), key(key), model(model), logsPath(logsPath)
+      : Napi::AsyncProgressQueueWorker<SynthesizerWorkerCallbackResult>(callback), id(synthesizerWorkerIds++), path(path), key(key), model(model), logsPath(logsPath), synthesizing(false)
   {
     UpdateSynthesizerWorkerStatus(this->id, RuntimeStatus::START);
   }
@@ -485,9 +485,23 @@ public:
       auto audioConfig = AudioConfig::FromDefaultSpeakerOutput();
       auto synthesizer = SpeechSynthesizer::FromConfig(speechConfig, audioConfig);
 
-      // Callback: synthesis canceled
-      synthesizer->SynthesisCanceled += [progress](const SpeechSynthesisEventArgs &e)
+      // Callback: synthesis started
+      synthesizer->SynthesisStarted += [this](const SpeechSynthesisEventArgs &e)
       {
+        this->synthesizing = true;
+      };
+
+      // Callback: synthesis completed
+      synthesizer->SynthesisCompleted += [this](const SpeechSynthesisEventArgs &e)
+      {
+        this->synthesizing = false;
+      };
+
+      // Callback: synthesis canceled
+      synthesizer->SynthesisCanceled += [this, progress](const SpeechSynthesisEventArgs &e)
+      {
+        this->synthesizing = false;
+
         auto cancellation = SpeechSynthesisCancellationDetails::FromResult(e.Result);
         if (cancellation->Reason == CancellationReason::Error)
         {
@@ -499,32 +513,31 @@ public:
       RuntimeStatus status;
       while ((status = GetSynthesizerWorkerStatus(this->id)) != RuntimeStatus::DISPOSE)
       {
-        if (status == RuntimeStatus::STOP)
-        {
-          synthesizer->StopSpeakingAsync().get();
-        }
-        else
+        if (status == RuntimeStatus::START && !this->synthesizing)
         {
           auto text = GetNextTextToSynthesize(this->id);
           if (!text.empty())
           {
-            // Start speaking in a new thread so that we are able
-            // to stop a running synthesizer
-            std::thread([&synthesizer, text]()
-                        { 
-                          // We need to assign the future to a variable to avoid the
-                          // future automatically getting destroyed.
-                          //
-                          // https://stackoverflow.com/questions/23455104/why-is-the-destructor-of-a-future-returned-from-stdasync-blocking
-                          auto future = synthesizer->StartSpeakingTextAsync(text).get(); })
-                .detach();
+            // We need to assign the future to a variable to avoid the
+            // future automatically getting destroyed, which would block
+            // the thread.
+            //
+            // https://stackoverflow.com/questions/23455104/why-is-the-destructor-of-a-future-returned-from-stdasync-blocking
+            auto synthesizerFuture = synthesizer->StartSpeakingTextAsync(text);
           }
+        }
+        else if (status == RuntimeStatus::STOP && this->synthesizing)
+        {
+          synthesizer->StopSpeakingAsync().get();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
 
-      synthesizer->StopSpeakingAsync().get();
+      if (this->synthesizing)
+      {
+        synthesizer->StopSpeakingAsync().get();
+      }
 
       RemoveSynthesizerWorkerStatus(this->id);
       RemoveSynthesizerTextQueue(this->id);
@@ -572,6 +585,7 @@ private:
   std::string key;
   std::string model;
   std::string logsPath;
+  bool synthesizing;
 };
 
 Napi::Value CreateSynthesizer(const Napi::CallbackInfo &info)
