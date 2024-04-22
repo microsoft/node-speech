@@ -447,6 +447,12 @@ std::string GetNextTextToSynthesize(int workerId)
   return text;
 }
 
+void RemoveSynthesizerTextQueue(int workerId)
+{
+  std::lock_guard<std::mutex> lock(synthesizerTextMutex);
+  synthesizerTextQueues.erase(workerId);
+}
+
 struct SynthesizerWorkerCallbackResult
 {
   StatusCode status;
@@ -521,6 +527,7 @@ public:
       synthesizer->StopSpeakingAsync().get();
 
       RemoveSynthesizerWorkerStatus(this->id);
+      RemoveSynthesizerTextQueue(this->id);
     }
     catch (const std::exception &e)
     {
