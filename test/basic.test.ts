@@ -13,6 +13,10 @@ describe('Basics', () => {
 			startTranscriber: expect.any(Function),
 			stopTranscriber: expect.any(Function),
 			disposeTranscriber: expect.any(Function),
+			synthesize: expect.any(Function),
+			createSynthesizer: expect.any(Function),
+			stopSynthesizer: expect.any(Function),
+			disposeSynthesizer: expect.any(Function),
 			recognize: expect.any(Function),
 			unrecognize: expect.any(Function)
 		}));
