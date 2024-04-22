@@ -94,6 +94,8 @@ export function createTranscriber({ modelPath, modelName, modelKey, phrases, log
 //#region Synthesis
 
 export enum SynthesizerStatusCode {
+  STARTED = 1,
+  STOPPED = 9,
   DISPOSED = 10,
   ERROR = 11
 }

@@ -486,15 +486,23 @@ public:
       auto synthesizer = SpeechSynthesizer::FromConfig(speechConfig, audioConfig);
 
       // Callback: synthesis started
-      synthesizer->SynthesisStarted += [this](const SpeechSynthesisEventArgs &e)
+      synthesizer->SynthesisStarted += [this, progress](const SpeechSynthesisEventArgs &e)
       {
         this->synthesizing = true;
+
+        UNUSED(e);
+        auto result = SynthesizerWorkerCallbackResult{StatusCode::STARTED};
+        progress.Send(&result, 1);
       };
 
       // Callback: synthesis completed
-      synthesizer->SynthesisCompleted += [this](const SpeechSynthesisEventArgs &e)
+      synthesizer->SynthesisCompleted += [this, progress](const SpeechSynthesisEventArgs &e)
       {
         this->synthesizing = false;
+
+        UNUSED(e);
+        auto result = SynthesizerWorkerCallbackResult{StatusCode::STOPPED};
+        progress.Send(&result, 1);
       };
 
       // Callback: synthesis canceled
