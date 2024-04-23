@@ -79,7 +79,7 @@ class TranscriptionWorker : public Napi::AsyncProgressQueueWorker<TranscriptionW
 public:
   const int id;
 
-  TranscriptionWorker(std::string &path, std::string &key, std::string &model, std::string &logsPath, std::vector<std::string> &phrases, Napi::Function &callback)
+  TranscriptionWorker(const std::string &path, const std::string &key, const std::string &model, const std::string &logsPath, const std::vector<std::string> &phrases, const Napi::Function &callback)
       : Napi::AsyncProgressQueueWorker<TranscriptionWorkerCallbackResult>(callback), id(transcriptionWorkerIds++), path(path), key(key), model(model), logsPath(logsPath), phrases(phrases), started(false)
   {
     UpdateTranscriptionWorkerStatus(this->id, RuntimeStatus::START);
@@ -427,7 +427,7 @@ std::queue<std::string> &GetSynthesizerTextQueue(int workerId)
   return it->second;
 }
 
-void AddTextToSynthesize(int workerId, std::string &text)
+void AddTextToSynthesize(int workerId, const std::string &text)
 {
   std::lock_guard<std::mutex> lock(synthesizerTextMutex);
   auto &queue = GetSynthesizerTextQueue(workerId);
@@ -464,7 +464,7 @@ class SynthesizerWorker : public Napi::AsyncProgressQueueWorker<SynthesizerWorke
 public:
   const int id;
 
-  SynthesizerWorker(std::string &path, std::string &key, std::string &model, std::string &logsPath, Napi::Function &callback)
+  SynthesizerWorker(const std::string &path, const std::string &key, const std::string &model,const  std::string &logsPath, const Napi::Function &callback)
       : Napi::AsyncProgressQueueWorker<SynthesizerWorkerCallbackResult>(callback), id(synthesizerWorkerIds++), path(path), key(key), model(model), logsPath(logsPath), synthesizing(false)
   {
     UpdateSynthesizerWorkerStatus(this->id, RuntimeStatus::START);
@@ -723,7 +723,7 @@ class KeywordWorker : public Napi::AsyncProgressQueueWorker<KeywordWorkerCallbac
 public:
   const int id;
 
-  KeywordWorker(std::string &path, Napi::Function &callback)
+  KeywordWorker(const std::string &path, const Napi::Function &callback)
       : Napi::AsyncProgressQueueWorker<KeywordWorkerCallbackResult>(callback), id(keywordWorkerIds++), path(path)
   {
     std::lock_guard<std::mutex> lock(runningKeywordWorkersMutex);
