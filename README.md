@@ -4,6 +4,8 @@
 
 A node.js binding for a subset of the [Azure Speech SDK](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/speech-sdk). Specifically for the [Embedded Speech](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/embedded-speech).
 
+The functionality of this module is limited to support the scenarios of the [VS Code Speech](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-speech) extension. The goal is **not** to provide a native binding for the full API of the Azure Speech SDK.
+
 ## Installation
 
 Install with npm:
@@ -29,6 +31,27 @@ let transcriber = speech.createTranscriber(
 // you can stop/start later
 transcriber.stop();
 transcriber.start();
+// later when done...
+transcriber.dispose();
+```
+
+## Usage: Synthesizer
+
+```ts
+import * as speech from "@vscode/node-speech";
+
+const modelName = "<name of the synthesizer model>";
+const modelPath = "<path to the synthesizer model>";
+const modelKey = "<key for the synthesizer model>";
+
+// Live transcription from microphone
+let synthesizer = speech.createSynthesizer(
+  { modelName, modelPath, modelKey },
+  (err, res) => console.log(err, res)
+);
+synthesizer.synthesize("Some text to synthesize");
+// you can stop later
+transcriber.stop();
 // later when done...
 transcriber.dispose();
 ```

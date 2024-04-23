@@ -8,6 +8,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <queue>
 #include <thread>
 
 using namespace Microsoft::CognitiveServices::Speech;
@@ -380,6 +381,320 @@ Napi::Value DisposeTranscriber(const Napi::CallbackInfo &info)
 
 #pragma endregion
 
+#pragma region Synthesizer
+
+static int synthesizerWorkerIds = 0;
+static std::unordered_map<int, RuntimeStatus> synthesizerWorkers;
+static std::mutex synthesizerWorkersMutex;
+
+void UpdateSynthesizerWorkerStatus(int workerId, RuntimeStatus status)
+{
+  std::lock_guard<std::mutex> lock(synthesizerWorkersMutex);
+  synthesizerWorkers[workerId] = status;
+}
+
+void RemoveSynthesizerWorkerStatus(int workerId)
+{
+  std::lock_guard<std::mutex> lock(synthesizerWorkersMutex);
+  synthesizerWorkers.erase(workerId);
+}
+
+RuntimeStatus GetSynthesizerWorkerStatus(int workerId)
+{
+  std::lock_guard<std::mutex> lock(synthesizerWorkersMutex);
+  auto it = synthesizerWorkers.find(workerId);
+  if (it != synthesizerWorkers.end())
+  {
+    return it->second;
+  }
+  else
+  {
+    return RuntimeStatus::DISPOSE;
+  }
+}
+
+static std::unordered_map<int, std::queue<std::string>> synthesizerTextQueues;
+static std::mutex synthesizerTextMutex;
+
+std::queue<std::string> &GetSynthesizerTextQueue(int workerId)
+{
+  auto it = synthesizerTextQueues.find(workerId);
+  if (it == synthesizerTextQueues.end())
+  {
+    synthesizerTextQueues[workerId] = std::queue<std::string>();
+    it = synthesizerTextQueues.find(workerId);
+  }
+  return it->second;
+}
+
+void AddTextToSynthesize(int workerId, std::string &text)
+{
+  std::lock_guard<std::mutex> lock(synthesizerTextMutex);
+  auto &queue = GetSynthesizerTextQueue(workerId);
+  queue.push(text);
+}
+
+std::string GetNextTextToSynthesize(int workerId)
+{
+  std::lock_guard<std::mutex> lock(synthesizerTextMutex);
+  auto &queue = GetSynthesizerTextQueue(workerId);
+  if (queue.empty())
+  {
+    return "";
+  }
+  auto text = queue.front();
+  queue.pop();
+  return text;
+}
+
+void RemoveSynthesizerTextQueue(int workerId)
+{
+  std::lock_guard<std::mutex> lock(synthesizerTextMutex);
+  synthesizerTextQueues.erase(workerId);
+}
+
+struct SynthesizerWorkerCallbackResult
+{
+  StatusCode status;
+  std::string data = "";
+};
+
+class SynthesizerWorker : public Napi::AsyncProgressQueueWorker<SynthesizerWorkerCallbackResult>
+{
+public:
+  const int id;
+
+  SynthesizerWorker(std::string &path, std::string &key, std::string &model, std::string &logsPath, Napi::Function &callback)
+      : Napi::AsyncProgressQueueWorker<SynthesizerWorkerCallbackResult>(callback), id(synthesizerWorkerIds++), path(path), key(key), model(model), logsPath(logsPath), synthesizing(false)
+  {
+    UpdateSynthesizerWorkerStatus(this->id, RuntimeStatus::START);
+  }
+
+  void Execute(const ExecutionProgress &progress)
+  {
+    try
+    {
+      auto speechConfig = EmbeddedSpeechConfig::FromPath(path);
+      speechConfig->SetSpeechSynthesisVoice(model, key);
+      if (!this->logsPath.empty())
+      {
+        speechConfig->SetProperty(PropertyId::Speech_LogFilename, logsPath);
+      }
+      speechConfig->SetSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat::Riff24Khz16BitMonoPcm);
+
+      auto audioConfig = AudioConfig::FromDefaultSpeakerOutput();
+      auto synthesizer = SpeechSynthesizer::FromConfig(speechConfig, audioConfig);
+
+      // Callback: synthesis started
+      synthesizer->SynthesisStarted += [this, progress](const SpeechSynthesisEventArgs &e)
+      {
+        this->synthesizing = true;
+
+        UNUSED(e);
+        auto result = SynthesizerWorkerCallbackResult{StatusCode::STARTED};
+        progress.Send(&result, 1);
+      };
+
+      // Callback: synthesis completed
+      synthesizer->SynthesisCompleted += [this, progress](const SpeechSynthesisEventArgs &e)
+      {
+        this->synthesizing = false;
+
+        UNUSED(e);
+        auto result = SynthesizerWorkerCallbackResult{StatusCode::STOPPED};
+        progress.Send(&result, 1);
+      };
+
+      // Callback: synthesis canceled
+      synthesizer->SynthesisCanceled += [this, progress](const SpeechSynthesisEventArgs &e)
+      {
+        this->synthesizing = false;
+
+        auto cancellation = SpeechSynthesisCancellationDetails::FromResult(e.Result);
+        if (cancellation->Reason == CancellationReason::Error)
+        {
+          auto result = SynthesizerWorkerCallbackResult{StatusCode::ERROR, cancellation->ErrorDetails};
+          progress.Send(&result, 1);
+        }
+      };
+
+      RuntimeStatus status;
+      while ((status = GetSynthesizerWorkerStatus(this->id)) != RuntimeStatus::DISPOSE)
+      {
+        if (status == RuntimeStatus::START && !this->synthesizing)
+        {
+          auto text = GetNextTextToSynthesize(this->id);
+          if (!text.empty())
+          {
+            // We need to assign the future to a variable to avoid the
+            // future automatically getting destroyed, which would block
+            // the thread.
+            //
+            // https://stackoverflow.com/questions/23455104/why-is-the-destructor-of-a-future-returned-from-stdasync-blocking
+            auto synthesizerFuture = synthesizer->StartSpeakingTextAsync(text);
+          }
+        }
+        else if (status == RuntimeStatus::STOP && this->synthesizing)
+        {
+          synthesizer->StopSpeakingAsync().get();
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+
+      if (this->synthesizing)
+      {
+        synthesizer->StopSpeakingAsync().get();
+      }
+
+      RemoveSynthesizerWorkerStatus(this->id);
+      RemoveSynthesizerTextQueue(this->id);
+    }
+    catch (const std::exception &e)
+    {
+      auto result = SynthesizerWorkerCallbackResult{StatusCode::ERROR, e.what()};
+      progress.Send(&result, 1);
+    }
+  }
+
+  void OnProgress(const SynthesizerWorkerCallbackResult *result, size_t /* count */)
+  {
+    Napi::HandleScope scope(Env());
+
+    auto jsResult = Napi::Object::New(Env());
+    jsResult.Set("status", Napi::Number::New(Env(), result->status));
+    if (!result->data.empty())
+    {
+      jsResult.Set("data", Napi::String::New(Env(), result->data));
+    }
+
+    Callback().Call({Env().Undefined(), jsResult});
+  }
+
+  void OnOK()
+  {
+    Napi::HandleScope scope(Env());
+
+    auto jsResult = Napi::Object::New(Env());
+    jsResult.Set("status", Napi::Number::New(Env(), StatusCode::DISPOSED));
+
+    Callback().Call({Env().Undefined(), jsResult});
+  }
+
+  void OnError(const Napi::Error &e)
+  {
+    Napi::HandleScope scope(Env());
+
+    Callback().Call({Napi::String::New(Env(), e.Message())});
+  }
+
+private:
+  std::string path;
+  std::string key;
+  std::string model;
+  std::string logsPath;
+  bool synthesizing;
+};
+
+Napi::Value CreateSynthesizer(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  // Validate args
+  if (info.Length() != 5)
+  {
+    Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  else if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString() || (!info[3].IsUndefined() && !info[3].IsString()) || !info[4].IsFunction())
+  {
+    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  auto modelPath = info[0].As<Napi::String>().Utf8Value();
+  auto modelName = info[1].As<Napi::String>().Utf8Value();
+  auto modelKey = info[2].As<Napi::String>().Utf8Value();
+  std::string logsPath;
+  if (!info[3].IsUndefined())
+  {
+    logsPath = info[3].As<Napi::String>().Utf8Value();
+  }
+  auto callback = info[4].As<Napi::Function>();
+
+  try
+  {
+    auto *worker = new SynthesizerWorker(modelPath, modelKey, modelName, logsPath, callback);
+    worker->Queue();
+
+    return Napi::Number::New(env, worker->id);
+  }
+  catch (const std::exception &e)
+  {
+    Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+}
+
+Napi::Value UpdateSynthesizer(const Napi::CallbackInfo &info, RuntimeStatus status)
+{
+  auto env = info.Env();
+
+  // Validate args
+  if (info.Length() < 1)
+  {
+    Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  else if (!info[0].IsNumber())
+  {
+    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  auto workerId = info[0].As<Napi::Number>();
+  UpdateSynthesizerWorkerStatus(workerId.Int32Value(), status);
+
+  return env.Undefined();
+}
+
+Napi::Value Synthesize(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  // Validate args
+  if (info.Length() < 2)
+  {
+    Napi::TypeError::New(env, "Wrong number of arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+  else if (!info[0].IsNumber() || !info[1].IsString())
+  {
+    Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
+    return env.Undefined();
+  }
+
+  auto workerId = info[0].As<Napi::Number>();
+  UpdateSynthesizerWorkerStatus(workerId.Int32Value(), RuntimeStatus::START);
+
+  auto text = info[1].As<Napi::String>().Utf8Value();
+  AddTextToSynthesize(workerId, text);
+
+  return env.Undefined();
+}
+
+Napi::Value StopSynthesizer(const Napi::CallbackInfo &info)
+{
+  return UpdateSynthesizer(info, RuntimeStatus::STOP);
+}
+
+Napi::Value DisposeSynthesizer(const Napi::CallbackInfo &info)
+{
+  return UpdateSynthesizer(info, RuntimeStatus::DISPOSE);
+}
+
+#pragma endregion
+
 #pragma region KeywordRecognition
 
 static int keywordWorkerIds = 0;
@@ -569,6 +884,11 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
   exports.Set(Napi::String::New(env, "startTranscriber"), Napi::Function::New(env, StartTranscriber));
   exports.Set(Napi::String::New(env, "stopTranscriber"), Napi::Function::New(env, StopTranscriber));
   exports.Set(Napi::String::New(env, "disposeTranscriber"), Napi::Function::New(env, DisposeTranscriber));
+
+  exports.Set(Napi::String::New(env, "createSynthesizer"), Napi::Function::New(env, CreateSynthesizer));
+  exports.Set(Napi::String::New(env, "stopSynthesizer"), Napi::Function::New(env, StopSynthesizer));
+  exports.Set(Napi::String::New(env, "disposeSynthesizer"), Napi::Function::New(env, DisposeSynthesizer));
+  exports.Set(Napi::String::New(env, "synthesize"), Napi::Function::New(env, Synthesize));
 
   exports.Set(Napi::String::New(env, "recognize"), Napi::Function::New(env, Recognize));
   exports.Set(Napi::String::New(env, "unrecognize"), Napi::Function::New(env, Unrecognize));

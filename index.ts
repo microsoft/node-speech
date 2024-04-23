@@ -13,9 +13,28 @@ interface SpeechLib {
   stopTranscriber: (id: number) => void,
   disposeTranscriber: (id: number) => void,
 
+  // Synthesis
+  createSynthesizer: (modelPath: string, modelName: string, modelKey: string, logsPath: string | undefined, callback: (error: Error | undefined, result: ISynthesizerResult) => void) => number,
+  stopSynthesizer: (id: number) => void,
+  disposeSynthesizer: (id: number) => void,
+  synthesize: (id: number, text: string) => void,
+
   // Keyword Recognition
   recognize: (modelPath: string, callback: (error: Error | undefined, result: IKeywordRecognitionResult) => void) => number,
   unrecognize: (id: number) => void
+}
+
+export interface IBaseOptions {
+  readonly modelPath: string;
+  readonly modelName: string;
+  readonly modelKey: string;
+
+  /**
+   * The path to a file to store verbose logs from the Azure Speech SDK to.
+   * 
+   * @see https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-use-logging
+   */
+  readonly logsPath?: string;
 }
 
 //#region Transcription
@@ -43,18 +62,7 @@ export interface ITranscriptionCallback {
   (error: Error | undefined, result: ITranscriptionResult): void;
 }
 
-export interface ITranscriptionOptions {
-  readonly modelPath: string;
-  readonly modelName: string;
-  readonly modelKey: string;
-
-  /**
-   * The path to a file to store verbose logs from the Azure Speech SDK to.
-   * 
-   * @see https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-use-logging
-   */
-  readonly logsPath?: string;
-
+export interface ITranscriptionOptions extends IBaseOptions {
   /**
    * A phrase list is a list of words or phrases provided ahead of time to help 
    * improve their recognition. Adding a phrase to a phrase list increases its 
@@ -78,6 +86,44 @@ export function createTranscriber({ modelPath, modelName, modelKey, phrases, log
     start: () => speechapi.startTranscriber(id),
     stop: () => speechapi.stopTranscriber(id),
     dispose: () => speechapi.disposeTranscriber(id)
+  };
+}
+
+//#endregion
+
+//#region Synthesis
+
+export enum SynthesizerStatusCode {
+  STARTED = 1,
+  STOPPED = 9,
+  DISPOSED = 10,
+  ERROR = 11
+}
+
+export interface ISynthesizerResult {
+  readonly status: SynthesizerStatusCode;
+  readonly data?: string;
+}
+
+export interface ISynthesizerCallback {
+  (error: Error | undefined, result: ISynthesizerResult): void;
+}
+
+export interface ISynthesizerOptions extends IBaseOptions { }
+
+export interface ISynthesizer {
+  synthesize(text: string): void;
+  stop(): void;
+  dispose(): void;
+}
+
+export function createSynthesizer({ modelPath, modelName, modelKey, logsPath }: ISynthesizerOptions, callback: ISynthesizerCallback): ISynthesizer {
+  const id = speechapi.createSynthesizer(modelPath, modelName, modelKey, logsPath ?? undefined, callback);
+
+  return {
+    synthesize: (text) => speechapi.synthesize(id, text),
+    stop: () => speechapi.stopSynthesizer(id),
+    dispose: () => speechapi.disposeSynthesizer(id)
   };
 }
 

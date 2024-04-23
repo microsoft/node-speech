@@ -19,6 +19,7 @@
             'libraries': [
               '-Wl,-rpath,@loader_path',
               '-lMicrosoft.CognitiveServices.Speech.core',
+              '-lMicrosoft.CognitiveServices.Speech.extension.embedded.tts',
               '-lMicrosoft.CognitiveServices.Speech.extension.embedded.sr',
               '-lMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime',
               '-lMicrosoft.CognitiveServices.Speech.extension.onnxruntime',
@@ -58,6 +59,7 @@
           'link_settings': {
             'libraries': [
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.tts.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\ARM64\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
             ],
@@ -67,6 +69,7 @@
           'link_settings': {
             'libraries': [
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.tts.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\x64\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
             ],
@@ -76,6 +79,7 @@
           'link_settings': {
             'libraries': [
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.core.lib',
+              '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.tts.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.embedded.sr.lib',
               '<(module_root_dir)\\.cache\\SpeechSDK\\build\\native\\Win32\\Release\\Microsoft.CognitiveServices.Speech.extension.onnxruntime.lib',
             ],
@@ -85,6 +89,8 @@
           "libraries": [
             "-Wl,-rpath,'$$ORIGIN'",
             '-lMicrosoft.CognitiveServices.Speech.core',
+            '-lMicrosoft.CognitiveServices.Speech.extension.embedded.tts',
+            '-lMicrosoft.CognitiveServices.Speech.extension.embedded.tts.runtime',
             '-lMicrosoft.CognitiveServices.Speech.extension.embedded.sr',
             '-lMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime',
             '-lMicrosoft.CognitiveServices.Speech.extension.onnxruntime',
@@ -115,6 +121,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/osx-arm64/native/libMicrosoft.CognitiveServices.Speech.core.dylib",
+                ".cache/SpeechSDK/runtimes/osx-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.dylib",
                 ".cache/SpeechSDK/runtimes/osx-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.dylib",
                 ".cache/SpeechSDK/runtimes/osx-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dylib",
                 ".cache/SpeechSDK/runtimes/osx-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.dylib",
@@ -126,6 +133,7 @@
           "copies": [{
               "files": [
                 ".cache/SpeechSDK/runtimes/osx-x64/native/libMicrosoft.CognitiveServices.Speech.core.dylib",
+                ".cache/SpeechSDK/runtimes/osx-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.dylib",
                 ".cache/SpeechSDK/runtimes/osx-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.dylib",
                 ".cache/SpeechSDK/runtimes/osx-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dylib",
                 ".cache/SpeechSDK/runtimes/osx-x64/native/libMicrosoft.CognitiveServices.Speech.extension.onnxruntime.dylib",
@@ -138,6 +146,7 @@
               "files": [
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.core.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
+                ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.tts.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
@@ -152,6 +161,7 @@
               "files": [
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.core.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
+                ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.tts.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
@@ -166,6 +176,7 @@
               "files": [
                 ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.core.dll",
                 ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll",
+                ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.tts.dll",
                 ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.dll",
                 ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.embedded.sr.runtime.dll",
                 ".cache/SpeechSDK/runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll",
@@ -180,6 +191,8 @@
               "files": [
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.core.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
+                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.so",
+                ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-x64/native/libMicrosoft.CognitiveServices.Speech.extension.kws.so",
@@ -194,6 +207,8 @@
               "files": [
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.core.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
+                ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.so",
+                ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-arm/native/libMicrosoft.CognitiveServices.Speech.extension.kws.so",
@@ -208,6 +223,8 @@
               "files": [
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.core.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.audio.sys.so",
+                ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.so",
+                ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.tts.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.embedded.sr.runtime.so",
                 ".cache/SpeechSDK/runtimes/linux-arm64/native/libMicrosoft.CognitiveServices.Speech.extension.kws.so",
