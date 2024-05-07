@@ -288,11 +288,11 @@ public:
   }
 
 private:
-  std::string path;
-  std::string key;
-  std::string model;
-  std::string logsPath;
-  std::vector<std::string> phrases;
+  const std::string path;
+  const std::string key;
+  const std::string model;
+  const std::string logsPath;
+  const std::vector<std::string> phrases;
   bool started;
 };
 
@@ -589,10 +589,10 @@ public:
   }
 
 private:
-  std::string path;
-  std::string key;
-  std::string model;
-  std::string logsPath;
+  const std::string path;
+  const std::string key;
+  const std::string model;
+  const std::string logsPath;
   bool synthesizing;
 };
 
@@ -817,7 +817,7 @@ public:
   }
 
 private:
-  std::string path;
+  const std::string path;
   std::future<void> waitingToStop;
 };
 
