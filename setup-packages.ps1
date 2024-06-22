@@ -10,4 +10,4 @@ New-Item -Path .cache/packages -Type Directory
 New-Item -Path .cache/SpeechSDK -Type Directory
 Get-ChildItem -Path $TEMP_PACKAGE_DIR -Recurse -Filter "*.nupkg" | Foreach-Object { cp $_ .cache/packages }
 
-rm -recurse $TEMP_PACKAGE_DIR
+rm -recurse -Force $TEMP_PACKAGE_DIR
