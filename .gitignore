@@ -7,3 +7,9 @@ build
 !preinstall.js
 *.js.map
 *.d.ts
+
+temp_packages
+bin
+obj
+*.csproj.*
+project.*

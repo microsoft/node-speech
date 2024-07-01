@@ -8,18 +8,17 @@
 
 const fs = require('fs');
 const path = require('path');
-const stream = require('stream');
 const { finished } = require('stream/promises');
 const yauzl = require('yauzl');
 
 const SDK_VERSION = '1.37.0';
 
 const packages = {
-  'Microsoft.CognitiveServices.Speech': SDK_VERSION,
-  'Microsoft.CognitiveServices.Speech.Extension.Embedded.SR': SDK_VERSION,
-  'Microsoft.CognitiveServices.Speech.Extension.Embedded.TTS': SDK_VERSION,
-  'Microsoft.CognitiveServices.Speech.Extension.ONNX.Runtime': SDK_VERSION,
-  // 'Microsoft.CognitiveServices.Speech.Extension.Telemetry': SDK_VERSION,
+  'microsoft.cognitiveservices.speech': SDK_VERSION,
+  'microsoft.cognitiveservices.speech.extension.embedded.sr': SDK_VERSION,
+  'microsoft.cognitiveservices.speech.extension.embedded.tts': SDK_VERSION,
+  'microsoft.cognitiveservices.speech.extension.onnx.runtime': SDK_VERSION,
+  // 'microsoft.cognitiveservices.speech.extension.telemetry': SDK_VERSION,
 };
 
 async function decompress(packagePath, outputPath) {
@@ -61,31 +60,10 @@ async function decompress(packagePath, outputPath) {
 
 async function main(packages) {
   const cacheDir = path.join(__dirname, '.cache');
-  await fs.promises.mkdir(path.join(cacheDir, 'packages'), { recursive: true });
-  await fs.promises.mkdir(path.join(cacheDir, 'SpeechSDK'), { recursive: true });
+  const sdkPath = path.join(cacheDir, 'SpeechSDK');
 
   for (const [name, version] of Object.entries(packages)) {
-    const url = `https://www.nuget.org/api/v2/package/${name}/${version}`;
-    const packagePath = path.join(cacheDir, 'packages', `${name}-${version}.nupkg`);
-
-    if (fs.existsSync(packagePath)) {
-      console.log(`Found ${name} ${version} in cache, skipping.`);
-      continue;
-    }
-
-    const sdkPath = path.join(cacheDir, 'SpeechSDK');
-
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      throw new Error(`Failed to download ${name} ${version}: ${res.statusText}`);
-    }
-
-    console.log(`Downloading ${name} ${version}...`);
-    const istream = stream.Readable.fromWeb(res.body);
-    const ostream = fs.createWriteStream(packagePath);
-    await finished(istream.pipe(ostream));
-
+    const packagePath = path.join(cacheDir, 'packages', `${name}.${version}.nupkg`);
     await decompress(packagePath, sdkPath);
   }
 }

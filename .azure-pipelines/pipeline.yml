@@ -50,7 +50,7 @@ extends:
           - script: npm run test
             displayName: Test npm package
 
-        apiScanSoftwareName: 'vscode-node-speech'
-        apiScanSoftwareVersion: '1'
+        # Run on the internal pipeline instead
+        skipApiScan: true
 
         publishPackage: ${{ parameters.publishPackage }}
