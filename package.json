@@ -20,7 +20,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
-    "install": "node preinstall.js",
+    "install": "pwsh setup-packages.ps1 && node preinstall.js",
     "postinstall": "node-gyp rebuild",
     "prepublish": "tsc",
     "prepare": "npm run test",

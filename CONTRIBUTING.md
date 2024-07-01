@@ -11,5 +11,4 @@
 ### Steps
 
 1. Clone the repository: `git clone https://github.com/microsoft/node-speech.git`
-2. Run the powershell script, `setup-packages.ps1`. This script uses dotnet to add various Speech SDK packages required for this repository, and copies the nupkg files to `.cache/packages`.
-3. Run the install script: `npm i`.
+2. Run the install script: `npm i`.
