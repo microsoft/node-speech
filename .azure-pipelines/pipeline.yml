@@ -29,9 +29,6 @@ extends:
       - name: node-speech
 
         buildSteps:
-          - pwsh: ./setup-packages.ps1
-            displayName: Download and extract C# packages
-
           - script: npm ci
             displayName: Install and build
 
@@ -47,9 +44,6 @@ extends:
               - 18.x
 
         testSteps:
-          - pwsh: ./setup-packages.ps1
-            displayName: Download and extract C# packages
-
           - script: npm ci
             displayName: Install and build
 
