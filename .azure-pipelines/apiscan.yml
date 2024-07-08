@@ -31,13 +31,13 @@ extends:
           steps:
             - pwsh: |
                 echo @"
-                  <?xml version="1.0" encoding="utf-8"?>
-                  <configuration>
-                    <packageSources>
-                      <clear />
-                      <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
-                    </packageSources>
-                  </configuration>
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <packageSources>
+                    <clear />
+                    <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
+                  </packageSources>
+                </configuration>
                 "@ > nuget.config
               displayName: Change feed
 
