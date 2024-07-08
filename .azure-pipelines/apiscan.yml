@@ -19,7 +19,7 @@ extends:
     sdl:
       sourceAnalysisPool: 1es-windows-2022-x64
       tsa:
-        enabled: true
+        enabled: false # TSA is already covered by pipeline.yml
 
     stages:
       - stage: Build
@@ -43,11 +43,8 @@ extends:
 
             - task: NuGetAuthenticate@1
 
-            - pwsh: ./setup-packages.ps1
-              displayName: Download and extract C# packages
-
             - script: npm ci
-              displayName: Install and build
+              displayName: Build
 
             - task: CopyFiles@2
               inputs:
