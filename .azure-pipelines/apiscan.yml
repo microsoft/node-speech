@@ -54,6 +54,7 @@ extends:
                     build/**/*.dll
                     build/**/*.node
                     build/**/*.pdb
+                    .cache/SpeechSDK/**/*.pdb
                   TargetFolder: "$(Agent.TempDirectory)/apiscan"
                   flattenFolders: true
                 displayName: Copy files for APIScan
