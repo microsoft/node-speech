@@ -65,6 +65,7 @@ extends:
                   softwareFolder: "$(Agent.TempDirectory)/apiscan"
                   softwareName: "vscode-node-speech"
                   softwareVersionNum: "1"
+                  symbolsFolder: "srv*https://symweb.azurefd.net;$(Agent.TempDirectory)/apiscan"
                   isLargeApp: false
                   toolVersion: "Latest"
                   azureSubscription: "vscode-apiscan"
