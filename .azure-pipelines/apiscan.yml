@@ -45,6 +45,31 @@ extends:
 
               - task: NuGetAuthenticate@1
 
+              - pwsh: |
+                  $includes = @'
+                    {
+                      'target_defaults': {
+                        'conditions': [
+                          ['OS=="win"', {
+                            'msvs_settings': {
+                              'VCLinkerTool': {
+                                'AdditionalOptions': [
+                                  '/profile'
+                                ]
+                              }
+                            }
+                          }]
+                        ]
+                      }
+                    }
+                  '@
+
+                  if (!(Test-Path "~/.gyp")) {
+                    mkdir "~/.gyp"
+                    echo $includes > "~/.gyp/include.gypi"
+                  }
+                displayName: Create include.gypi
+
               - script: npm ci
                 displayName: Build
 
