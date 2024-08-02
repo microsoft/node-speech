@@ -28,6 +28,8 @@ extends:
             pool:
               name: 1es-windows-2022-x64
               os: Windows
+            variables:
+              - group: "API Scan"
             steps:
               - pwsh: |
                   echo @"
