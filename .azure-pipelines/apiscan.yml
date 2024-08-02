@@ -48,11 +48,10 @@ extends:
 
               - task: CopyFiles@2
                 inputs:
-                  SourceFolder: "$(Build.SourcesDirectory)/build"
                   Contents: |
-                    '**\*.dll'
-                    '**\*.node'
-                    '**\*.pdb'
+                    build/**/*.dll
+                    build/**/*.node
+                    build/**/*.pdb
                   TargetFolder: "$(Agent.TempDirectory)/apiscan"
                   flattenFolders: true
                 displayName: Copy files for APIScan
