@@ -24,57 +24,58 @@ extends:
     stages:
       - stage: Build
         jobs:
-        - job: APIScan
-          pool:
-            name: 1es-windows-2022-x64
-            os: Windows
-          steps:
-            - pwsh: |
-                echo @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                  <packageSources>
-                    <clear />
-                    <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
-                  </packageSources>
-                </configuration>
-                "@ > nuget.config
-              displayName: Change feed
+          - job: APIScan
+            pool:
+              name: 1es-windows-2022-x64
+              os: Windows
+            steps:
+              - pwsh: |
+                  echo @"
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <configuration>
+                    <packageSources>
+                      <clear />
+                      <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
+                    </packageSources>
+                  </configuration>
+                  "@ > nuget.config
+                displayName: Change feed
 
-            - task: NuGetAuthenticate@1
+              - task: NuGetAuthenticate@1
 
-            - script: npm ci
-              displayName: Build
+              - script: npm ci
+                displayName: Build
 
-            - task: CopyFiles@2
-              inputs:
-                SourceFolder: '$(Build.SourcesDirectory)/build'
-                Contents: |
-                  '**\*.dll'
-                  '**\*.node'
-                  '**\*.pdb'
-                TargetFolder: '$(Agent.TempDirectory)/apiscan'
-                flattenFolders: true
-              displayName: Copy files for APIScan
-              condition: succeeded()
+              - task: CopyFiles@2
+                inputs:
+                  SourceFolder: "$(Build.SourcesDirectory)/build"
+                  Contents: |
+                    '**\*.dll'
+                    '**\*.node'
+                    '**\*.pdb'
+                  TargetFolder: "$(Agent.TempDirectory)/apiscan"
+                  flattenFolders: true
+                displayName: Copy files for APIScan
+                condition: succeeded()
 
-            # Run APIScan
-            # - task: APIScan@2
-            #   inputs:
-            #     softwareFolder: '$(Agent.TempDirectory)/apiscan'
-            #     softwareName: 'vscode-node-speech'
-            #     softwareVersionNum: '1'
-            #     isLargeApp: false
-            #     toolVersion: 'Latest'
-            #   displayName: Run APIScan
-            #   condition: succeeded()
-            #   env:
-            #     AzureServicesAuthConnectionString: $(apiscan-connectionstring)
+              - task: APIScan@2
+                inputs:
+                  softwareFolder: "$(Agent.TempDirectory)/apiscan"
+                  softwareName: "vscode-node-speech"
+                  softwareVersionNum: "1"
+                  isLargeApp: false
+                  toolVersion: "Latest"
+                  azureSubscription: "vscode-apiscan"
+                displayName: Run APIScan
+                condition: succeeded()
+                env:
+                  AzureServicesAuthConnectionString: $(apiscan-connectionstring)
+                  SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-            - task: PublishSecurityAnalysisLogs@3
-              displayName: Publish security logs
-              inputs:
-                ArtifactName: 'CodeAnalysisLogs'
-                ArtifactType: 'Container'
-                AllTools: true
-                ToolLogsNotFoundAction: 'Standard'
+              - task: PublishSecurityAnalysisLogs@3
+                displayName: Publish security logs
+                inputs:
+                  ArtifactName: "CodeAnalysisLogs"
+                  ArtifactType: "Container"
+                  AllTools: true
+                  ToolLogsNotFoundAction: "Standard"
