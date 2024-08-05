@@ -19,64 +19,91 @@ extends:
     sdl:
       sourceAnalysisPool: 1es-windows-2022-x64
       tsa:
-        enabled: true
+        enabled: false # TSA is already covered by pipeline.yml
 
     stages:
       - stage: Build
         jobs:
-        - job: APIScan
-          pool:
-            name: 1es-windows-2022-x64
-            os: Windows
-          steps:
-            - pwsh: |
-                echo @"<?xml version="1.0" encoding="utf-8"?>
+          - job: APIScan
+            pool:
+              name: 1es-windows-2022-x64
+              os: Windows
+            variables:
+              - group: "API Scan"
+            steps:
+              - pwsh: |
+                  echo @"
+                  <?xml version="1.0" encoding="utf-8"?>
                   <configuration>
                     <packageSources>
                       <clear />
                       <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
                     </packageSources>
                   </configuration>
-                "@ > nuget.config
-              displayName: Change feed
+                  "@ > nuget.config
+                displayName: Change feed
 
-            - task: NuGetAuthenticate@1
+              - task: NuGetAuthenticate@1
 
-            - pwsh: ./setup-packages.ps1
-              displayName: Download and extract C# packages
+              - pwsh: |
+                  $includes = @'
+                    {
+                      'target_defaults': {
+                        'conditions': [
+                          ['OS=="win"', {
+                            'msvs_settings': {
+                              'VCLinkerTool': {
+                                'AdditionalOptions': [
+                                  '/profile'
+                                ]
+                              }
+                            }
+                          }]
+                        ]
+                      }
+                    }
+                  '@
 
-            - script: npm ci
-              displayName: Install and build
+                  if (!(Test-Path "~/.gyp")) {
+                    mkdir "~/.gyp"
+                    echo $includes > "~/.gyp/include.gypi"
+                  }
+                displayName: Create include.gypi
 
-            - task: CopyFiles@2
-              inputs:
-                SourceFolder: '$(Build.SourcesDirectory)/build'
-                Contents: |
-                  '**\*.dll'
-                  '**\*.node'
-                  '**\*.pdb'
-                TargetFolder: '$(Agent.TempDirectory)/apiscan'
-                flattenFolders: true
-              displayName: Copy files for APIScan
-              condition: succeeded()
+              - script: npm ci
+                displayName: Build
 
-            # Run APIScan
-            # - task: APIScan@2
-            #   inputs:
-            #     softwareFolder: '$(Agent.TempDirectory)/apiscan'
-            #     softwareName: 'vscode-node-speech'
-            #     softwareVersionNum: '1'
-            #     isLargeApp: false
-            #     toolVersion: 'Latest'
-            #   displayName: Run APIScan
-            #   condition: succeeded()
-            #   env:
-            #     AzureServicesAuthConnectionString: $(apiscan-connectionstring)
+              - task: CopyFiles@2
+                inputs:
+                  Contents: |
+                    build/**/*.dll
+                    build/**/*.node
+                    build/**/*.pdb
+                    .cache/SpeechSDK/**/*.pdb
+                  TargetFolder: "$(Agent.TempDirectory)/apiscan"
+                  flattenFolders: true
+                displayName: Copy files for APIScan
+                condition: succeeded()
 
-            - task: PublishSecurityAnalysisLogs@3
-              displayName: Publish security logs
-              inputs:
-                ArtifactName: 'CodeAnalysisLogs'
-                ArtifactType: 'Container'
-                AllTools: true
-                ToolLogsNotFoundAction: 'Standard'
+              - task: APIScan@2
+                inputs:
+                  softwareFolder: "$(Agent.TempDirectory)/apiscan"
+                  softwareName: "vscode-node-speech"
+                  softwareVersionNum: "1"
+                  symbolsFolder: "srv*https://symweb.azurefd.net;$(Agent.TempDirectory)/apiscan"
+                  isLargeApp: false
+                  toolVersion: "Latest"
+                  azureSubscription: "vscode-apiscan"
+                displayName: Run APIScan
+                condition: succeeded()
+                env:
+                  AzureServicesAuthConnectionString: $(apiscan-connectionstring)
+                  SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+              - task: PublishSecurityAnalysisLogs@3
+                displayName: Publish security logs
+                inputs:
+                  ArtifactName: "CodeAnalysisLogs"
+                  ArtifactType: "Container"
+                  AllTools: true
+                  ToolLogsNotFoundAction: "Standard"
