@@ -11,7 +11,7 @@ const path = require('path');
 const { finished } = require('stream/promises');
 const yauzl = require('yauzl');
 
-const SDK_VERSION = '1.37.0';
+const SDK_VERSION = '1.39.0';
 
 const packages = {
   'microsoft.cognitiveservices.speech': SDK_VERSION,
