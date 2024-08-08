@@ -19,7 +19,7 @@ extends:
     sdl:
       sourceAnalysisPool: 1es-windows-2022-x64
       tsa:
-        enabled: false # TSA is already covered by pipeline.yml
+        enabled: false # Keep TSA off until results look good.
 
     stages:
       - stage: Build
@@ -81,7 +81,6 @@ extends:
                     build/**/*.pdb
                     .cache/SpeechSDK/**/*.pdb
                   TargetFolder: "$(Agent.TempDirectory)/apiscan"
-                  flattenFolders: true
                 displayName: Copy files for APIScan
                 condition: succeeded()
 
