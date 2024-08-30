@@ -19,7 +19,7 @@ extends:
     sdl:
       sourceAnalysisPool: 1es-windows-2022-x64
       tsa:
-        enabled: false # TSA is already covered by pipeline.yml
+        enabled: true
 
     stages:
       - stage: Build
