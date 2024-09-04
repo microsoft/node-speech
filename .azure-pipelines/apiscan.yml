@@ -110,9 +110,9 @@ extends:
                   AllTools: true
                   ToolLogsNotFoundAction: "Standard"
 
-              # - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
-              #   displayName: 🔒 TSA Upload
-              #   continueOnError: true
-              #   inputs:
-              #     GdnPublishTsaConfigFile: $(Build.SourcesDirectory)/.config/tsaoptions.json
-              #     GdnPublishTsaOnboard: True
+              - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
+                displayName: 🔒 TSA Upload
+                continueOnError: true
+                inputs:
+                  GdnPublishTsaConfigFile: $(Build.SourcesDirectory)/.config/tsaoptions.json
+                  GdnPublishTsaOnboard: True

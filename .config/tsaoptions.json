@@ -1,5 +1,5 @@
 {
-    "codebaseName": "devdiv_microsoft_vscode_node_speech",
+    "codebaseName": "devdiv_microsoft_node_speech",
     "instanceUrl": "https://devdiv.visualstudio.com/defaultcollection",
     "projectName": "DevDiv",
     "areaPath": "DevDiv\\VS Code (compliance tracking only)\\Visual Studio Code NPM Packages",
