@@ -31,9 +31,6 @@ extends:
             variables:
               - group: "API Scan"
             steps:
-              - pwsh: echo $(Build.Repository.Name)
-                displayName: Log repository name
-
               - pwsh: |
                   echo @"
                   <?xml version="1.0" encoding="utf-8"?>
