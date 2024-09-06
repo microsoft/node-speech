@@ -19,7 +19,7 @@ extends:
     sdl:
       sourceAnalysisPool: 1es-windows-2022-x64
       tsa:
-        enabled: true
+        enabled: false # sdlSources TSA is already covered in pipeline.yml
 
     stages:
       - stage: Build
@@ -106,3 +106,10 @@ extends:
                   ArtifactType: "Container"
                   AllTools: true
                   ToolLogsNotFoundAction: "Standard"
+
+              - task: securedevelopmentteam.vss-secure-development-tools.build-task-uploadtotsa.TSAUpload@2
+                displayName: 🔒 TSA Upload
+                continueOnError: true
+                inputs:
+                  GdnPublishTsaConfigFile: $(Build.SourcesDirectory)/.config/tsaoptions.json
+                  GdnPublishTsaOnboard: True
