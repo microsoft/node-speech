@@ -1,4 +1,4 @@
-$SDK_VERSION = "1.40.0"
+$SDK_VERSION = "1.41.1"
 $TEMP_PACKAGE_DIR = "temp_packages"
 
 mkdir $TEMP_PACKAGE_DIR
