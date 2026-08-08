@@ -29,6 +29,20 @@ extends:
       - name: node-speech
 
         buildSteps:
+          - pwsh: |
+              echo @"
+              <?xml version="1.0" encoding="utf-8"?>
+              <configuration>
+                <packageSources>
+                  <clear />
+                  <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
+                </packageSources>
+              </configuration>
+              "@ > nuget.config
+            displayName: Configure NuGet feed
+
+          - task: NuGetAuthenticate@1
+
           - script: npm ci
             displayName: Install and build
 
@@ -44,6 +58,20 @@ extends:
               - 20.x
 
         testSteps:
+          - pwsh: |
+              echo @"
+              <?xml version="1.0" encoding="utf-8"?>
+              <configuration>
+                <packageSources>
+                  <clear />
+                  <add key="node-speech" value="https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/node-speech/nuget/v3/index.json" />
+                </packageSources>
+              </configuration>
+              "@ > nuget.config
+            displayName: Configure NuGet feed
+
+          - task: NuGetAuthenticate@1
+
           - script: npm ci
             displayName: Install and build
 
