@@ -20,6 +20,9 @@ extends:
       sourceAnalysisPool: 1es-windows-2022-x64
       tsa:
         enabled: false # sdlSources TSA is already covered in pipeline.yml
+    settings:
+      networkIsolationPolicy: Permissive,CFSClean,CFSClean2,CFSClean3
+      skipBuildTagsForGitHubPullRequests: true
 
     stages:
       - stage: Build
@@ -42,6 +45,17 @@ extends:
                 displayName: Change feed
 
               - task: NuGetAuthenticate@1
+
+              - pwsh: |
+                  echo @"
+                  registry=https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/vscode/npm/registry/
+                  always-auth=true
+                  "@ > .npmrc
+                displayName: Configure npm feed
+
+              - task: npmAuthenticate@0
+                inputs:
+                  workingFile: .npmrc
 
               - pwsh: |
                   $includes = @'
