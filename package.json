@@ -23,7 +23,6 @@
     "install": "pwsh setup-packages.ps1 && node preinstall.js",
     "postinstall": "node-gyp rebuild",
     "prepublish": "tsc",
-    "prepare": "npm run test",
     "watch": "tsc -w",
     "test": "jest"
   },
