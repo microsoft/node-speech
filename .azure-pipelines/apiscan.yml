@@ -21,7 +21,7 @@ extends:
       tsa:
         enabled: false # sdlSources TSA is already covered in pipeline.yml
     settings:
-      networkIsolationPolicy: Preferred,GitHub,AzureSql,CFSClean,CFSClean2,CFSClean3
+      networkIsolationPolicy: Good,GitHub,AzureSql,CFSClean,CFSClean2,CFSClean3
       skipBuildTagsForGitHubPullRequests: true
 
     stages:
