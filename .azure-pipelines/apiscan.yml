@@ -44,18 +44,13 @@ extends:
                   "@ > nuget.config
                 displayName: Change feed
 
-              - task: NuGetAuthenticate@1
-
               - pwsh: |
                   echo @"
                   registry=https://pkgs.dev.azure.com/monacotools/Monaco/_packaging/vscode/npm/registry/
                   always-auth=true
                   "@ > .npmrc
+                  Copy-Item -LiteralPath .npmrc -Destination "$(Agent.TempDirectory)\node-speech-apiscan.npmrc"
                 displayName: Configure npm feed
-
-              - task: npmAuthenticate@0
-                inputs:
-                  workingFile: .npmrc
 
               - pwsh: |
                   $includes = @'
@@ -82,8 +77,24 @@ extends:
                   }
                 displayName: Create include.gypi
 
+              - task: NuGetAuthenticate@1
+
+              - task: npmAuthenticate@0
+                inputs:
+                  workingFile: $(Agent.TempDirectory)\node-speech-apiscan.npmrc
+
               - script: npm ci
                 displayName: Build
+                env:
+                  NPM_CONFIG_USERCONFIG: $(Agent.TempDirectory)\node-speech-apiscan.npmrc
+
+              - pwsh: |
+                  $npmConfig = "$(Agent.TempDirectory)\node-speech-apiscan.npmrc"
+                  if (Test-Path -LiteralPath $npmConfig) {
+                    Clear-Content -LiteralPath $npmConfig
+                  }
+                displayName: Clear npm feed credentials
+                condition: always()
 
               - task: CopyFiles@2
                 inputs:
