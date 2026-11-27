@@ -6,6 +6,8 @@ trigger:
     include:
       - main
 
+pr: none
+
 resources:
   repositories:
     - repository: 1esPipelines
@@ -28,6 +30,15 @@ extends:
       - stage: Build
         jobs:
           - job: APIScan
+            condition: |
+              and(
+                succeeded(),
+                ne(variables['Build.Reason'], 'PullRequest'),
+                or(
+                  eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+                  startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')
+                )
+              )
             pool:
               name: 1es-windows-2022-x64
               os: Windows
